@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Crunchroom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: energetic, tactile team tool: a jam war-room, not a corporate dashboard
+   IDEA: a handheld console's level select: the deadline is the level timer, jam phases are the world map
+   PICTURE: giant pixel countdown over a segmented phase track; a pixel jam jar as the mark
+   COLOUR and TYPE: cobalt field, hot-pink accent, sun-yellow timer; Pixelify Sans for clock and brand, Rubik for UI
+   LAYOUT: cobalt side rail, work area centre, live team roster right; bottom tabs on phones */
+:root{color-scheme:light dark;
+--bg:light-dark(#f2f3fa,#101118);--panel:light-dark(#ffffff,#191b24);--panel2:light-dark(#eaecf6,#222532);
+--ink:light-dark(#141522,#eceef6);--mute:light-dark(#585c72,#9aa0b7);--line:light-dark(#dadded,#2b2f3e);
+--blue:#2f3cff;--side:light-dark(#2f3cff,#1b2190);--link:light-dark(#2433e0,#9aa2ff);
+--pink:#ff3d7f;--sun:#ffd23f;--ok:#0f9d63;--bad:#e23a3d;--deep:#0b0e3a;--r:12px}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Rubik,system-ui,sans-serif;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+h1,h2,h3,h4{line-height:1.1;margin:0}
+.ic{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pix{font-family:"Pixelify Sans",Rubik,monospace}
+.logo{font-family:"Pixelify Sans",Rubik,monospace;font-weight:700;font-size:26px;display:flex;align-items:center;gap:10px}
+.jar{image-rendering:pixelated;shape-rendering:crispEdges}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--blue)}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.hot{background:var(--pink);border-color:var(--pink);color:#fff}
+.btn.sm{min-height:32px;padding:0 10px;font-size:13px}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.ghost:hover{background:var(--panel2)}
+.btn:disabled{opacity:.5;cursor:default}
+input,select,textarea{width:100%;min-height:42px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font-size:16px}
+textarea{resize:vertical}
+input[type=checkbox],input[type=radio]{width:auto;min-height:0}
+label.f,.f{display:grid;gap:6px;font-size:13px;color:var(--mute);font-weight:500}
+.f>input,.f>select,.f>textarea{color:var(--ink)}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.muted{color:var(--mute)}.small{font-size:13px}.err{color:var(--bad);font-size:14px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.end{justify-content:flex-end}.grow{flex:1}
+.stack{display:grid;gap:14px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:99px;min-height:34px;padding:0 12px;font-size:13px}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.screen{position:fixed;inset:0;overflow:auto}
+.center{display:grid;place-items:center;padding:24px}
+#boot,#gate{background:var(--blue);color:#fff;text-align:center}
+#boot .logo{font-size:clamp(40px,8vw,72px);justify-content:center}
+.gateCard{max-width:520px;background:var(--panel);color:var(--ink);border-radius:16px;padding:28px;text-align:left;display:grid;gap:12px}
+/* onboarding + lobby */
+.obCard{width:min(520px,100%);background:var(--panel);border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+.obTop{background:var(--blue);color:#fff;padding:22px 24px}
+.obTop h1{font-size:30px;margin-top:10px}
+.obBody{padding:22px 24px;display:grid;gap:14px}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.swatches label{position:relative}
+.swatches input{position:absolute;opacity:0}
+.swatches span{display:block;width:36px;height:36px;border-radius:10px;background:var(--c);border:3px solid transparent}
+.swatches input:checked+span{border-color:var(--ink)}
+.swatches input:focus-visible+span{outline:3px solid var(--sun)}
+.lobHead{background:var(--blue);color:#fff;padding:clamp(24px,5vw,56px) max(4vw,16px) clamp(28px,5vw,60px)}
+.lobIn{max-width:1100px;margin:0 auto}
+.lobHead .logo{font-size:clamp(36px,6vw,60px)}
+.lobHead p{max-width:620px;font-size:17px;opacity:.9;margin:12px 0 0}
+.lobBody{max-width:1100px;margin:0 auto;padding:28px max(4vw,16px) 60px;display:grid;gap:22px}
+.wsList{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.wsCard{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:4px;border-top:6px solid var(--pink)}
+.wsCard:hover{border-color:var(--blue)}
+.wsCard b{font-size:18px}
+.two{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;align-items:start}
+.two h3{font-size:20px;margin-bottom:12px}
+.grid2f{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.meChip{display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:99px;padding:6px 14px 6px 6px;margin-top:18px}
+/* shell */
+#main{position:fixed;inset:0;display:grid;grid-template-columns:236px minmax(0,1fr) 270px}
+.side{background:var(--side);color:#fff;display:flex;flex-direction:column;gap:12px;padding:16px 12px;overflow:auto}
+.side .logo{font-size:23px;padding:0 4px}
+.wsBtn{text-align:left;background:rgba(255,255,255,.12);border:0;border-radius:10px;padding:10px 12px;color:#fff;display:grid;gap:2px}
+.wsBtn b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wsBtn small{opacity:.8;font-size:12px}
+.sClock{background:var(--deep);border-radius:10px;padding:10px 12px;display:grid;gap:2px}
+.sClock b{font-family:"Pixelify Sans",monospace;font-size:26px;color:var(--sun);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sClock small{opacity:.85;font-size:12px}
+nav{display:grid;gap:2px}
+.nv{display:flex;align-items:center;gap:10px;min-height:42px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:#fff;text-align:left;font-weight:500;position:relative}
+.nv:hover{background:rgba(255,255,255,.12)}
+.nv.on{background:#fff;color:#2f3cff}
+.bd{margin-left:auto;background:var(--pink);color:#fff;border-radius:99px;font-size:12px;padding:0 7px;font-weight:600;line-height:20px}
+.meCard{margin-top:auto;background:rgba(255,255,255,.1);border-radius:12px;padding:10px;display:grid;gap:8px}
+.meCard .row{flex-wrap:nowrap}
+.meCard .btn{color:#fff;background:rgba(255,255,255,.12);border-color:transparent}
+.content{display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.top{display:flex;align-items:center;gap:8px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel);min-height:62px}
+.top h2{font-size:20px;flex:1}
+.tClock{display:none;font-family:"Pixelify Sans",monospace;color:var(--pink);font-size:18px;white-space:nowrap}
+#banner{background:var(--sun);color:#1b1b1b;padding:8px 20px;font-size:14px}
+#view{flex:1;overflow:auto;padding:22px;min-height:0}
+#view.flush{padding:0;overflow:hidden;display:flex}
+.team{border-left:1px solid var(--line);background:var(--panel);overflow:auto;padding:16px;display:grid;align-content:start;gap:10px}
+.team h3{font-size:15px;display:flex;align-items:center;gap:8px}
+.mem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;padding:8px;border-radius:10px}
+.mem:hover{background:var(--panel2)}
+.mi{display:grid;font-size:13px}
+.mi b{font-size:14px}
+.mi .note{color:var(--mute)}.mi .doing{color:var(--link)}
+.av{--c:#2f3cff;position:relative;display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--c);color:#fff;font-weight:700;font-size:13px;flex:none;text-transform:uppercase}
+.av.s{width:24px;height:24px;border-radius:7px;font-size:11px}
+.av i{position:absolute;right:-3px;bottom:-3px;width:11px;height:11px;border-radius:50%;background:#9aa0b7;border:2px solid var(--panel)}
+.av i.on{background:#20c77a}
+.st{display:inline-flex;align-items:center;gap:4px}
+.st::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--s)}
+/* dashboard */
+.hero{background:var(--blue);color:#fff;border-radius:18px;padding:clamp(18px,3vw,30px);display:grid;gap:4px;position:relative;overflow:hidden}
+.heroTop{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.kick{margin:0;font-weight:500;opacity:.9}
+.hero h1{font-size:clamp(24px,3.2vw,38px);margin:6px 0 12px;text-wrap:balance}
+.big{font-family:"Pixelify Sans",monospace;font-size:clamp(44px,8vw,96px);line-height:.95;color:var(--sun);font-variant-numeric:tabular-nums;white-space:nowrap}
+.track{display:flex;gap:4px;margin-top:20px}
+.seg{display:grid;gap:5px;font-size:12px}
+.seg>span{height:14px;border-radius:4px;background:rgba(255,255,255,.2);position:relative;overflow:hidden}
+.seg>span i{position:absolute;inset:0 auto 0 0;background:var(--sun)}
+.seg.now em{font-style:normal;font-weight:700;color:var(--sun)}
+.seg em{font-style:normal;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:18px}
+.stat{background:rgba(11,14,58,.35);border-radius:12px;padding:12px}
+.stat b{display:block;font-family:"Pixelify Sans",monospace;font-size:32px;line-height:1}
+.stat small{opacity:.85}
+.heroJar{flex:none;width:clamp(48px,8vw,84px);height:auto;filter:drop-shadow(0 6px 0 rgba(11,14,58,.35))}
+.statusBar{margin-top:16px;display:grid;gap:12px}
+.stRow{display:grid;grid-template-columns:180px minmax(0,1fr) auto;gap:10px;align-items:end}
+.focusRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#fLeft{color:var(--pink);font-size:20px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
+.ch{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ch h3{flex:1;font-size:17px}
+.li{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.li:first-child{border-top:0}
+.li .grow{display:grid;gap:2px}
+.empty{color:var(--mute);font-size:14px;padding:6px 0}
+.kchip,.stchip{display:inline-block;font-size:12px;font-weight:600;border-radius:99px;padding:1px 8px;background:var(--panel2);white-space:nowrap}
+.k-handoff .kchip,.kchip.k-handoff{background:#d9ffe9;color:#05603a}
+.k-review .kchip,.kchip.k-review{background:#e6e8ff;color:#1d27b8}
+.k-blocked .kchip,.kchip.k-blocked{background:#ffe0e8;color:#a3123f}
+.k-question .kchip,.kchip.k-question,.k-assigned .kchip,.kchip.k-assigned{background:#fff2c2;color:#6b5200}
+.k-unblocked .kchip,.kchip.k-unblocked,.k-mention .kchip,.kchip.k-mention{background:var(--panel2);color:var(--ink)}
+/* board */
+.bTop{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.qadd{display:flex;gap:8px;flex:1;min-width:240px}
+.board{display:grid;grid-template-columns:repeat(4,minmax(190px,1fr));gap:14px;overflow-x:auto;padding-bottom:8px;align-items:start}
+.col{background:var(--panel2);border-radius:14px;padding:10px;min-height:220px}
+.col.over{outline:2px dashed var(--blue);outline-offset:-2px}
+.colH{display:flex;align-items:center;gap:8px;padding:4px 4px 10px;font-weight:600}
+.colH .n{color:var(--mute);font-weight:500}
+.tcard{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:grab;display:grid;gap:6px}
+.tcard.pri-high{border-left-color:var(--pink)}.tcard.pri-med{border-left-color:var(--sun)}
+.tcard h4{font-size:15px;font-weight:500;line-height:1.3}
+.tcard.done h4{text-decoration:line-through;color:var(--mute)}
+.tfoot{display:flex;gap:6px;align-items:center}
+.tfoot select{min-height:30px;padding:2px 6px;font-size:13px;width:auto;flex:1}
+.tag{font-size:12px;padding:1px 8px;border-radius:99px;font-weight:600;background:var(--panel2);white-space:nowrap}
+.tag-Code{background:#e3e6ff;color:#1d27b8}.tag-Art{background:#ffe0ec;color:#a3123f}.tag-Audio{background:#ffead6;color:#8a4300}
+.tag-Design{background:#efe3ff;color:#5b21b6}.tag-Writing{background:#d8f6fb;color:#065c6b}.tag-QA{background:#d9ffe9;color:#05603a}
+.dep{font-size:12px;color:var(--bad);font-weight:500}.dep.ok{color:var(--ok)}
+/* chat */
+.chat{display:grid;grid-template-columns:200px minmax(0,1fr);flex:1;min-height:0}
+.chans{border-right:1px solid var(--line);padding:14px 10px;overflow:auto;background:var(--panel)}
+.chT{font-size:12px;color:var(--mute);padding:0 10px 6px;font-weight:600}
+.chb{display:flex;width:100%;align-items:center;gap:6px;min-height:38px;border:0;background:none;border-radius:8px;padding:0 10px;text-align:left;color:var(--mute)}
+.chb:hover{background:var(--panel2)}
+.chb.on{background:var(--panel2);color:var(--ink);font-weight:600}
+.chb.unread{color:var(--ink);font-weight:700}
+.chb .u{margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--pink)}
+.chatMain{display:flex;flex-direction:column;min-height:0;position:relative}
+.chatMain.drop::after{content:"Drop files to attach";position:absolute;inset:10px;border:3px dashed var(--blue);border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--panel) 85%,transparent);font-weight:600;font-size:18px}
+.chHead{padding:10px 18px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;background:var(--panel);min-height:52px}
+.chHead b{flex:1}
+.msgs{flex:1;overflow:auto;padding:10px 14px 6px}
+#older{display:block;margin:6px auto 10px}
+.msg{display:grid;grid-template-columns:36px minmax(0,1fr);gap:10px;padding:6px 8px;border-radius:10px;position:relative}
+.msg:hover{background:var(--panel2)}
+.msg.g{padding-top:0}.msg.g>.av{visibility:hidden;height:0}
+.msg.bot{background:color-mix(in srgb,var(--sun) 16%,transparent)}
+.msg.pin{box-shadow:inset 3px 0 0 var(--pink)}
+.mh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.mh time{font-size:12px;color:var(--mute)}
+.mb{overflow-wrap:anywhere}
+.mb p{margin:0 0 4px}.mb ul,.mb ol,.md ul,.md ol{margin:4px 0;padding-left:22px}
+.mb h4,.md h4{margin:8px 0 4px;font-size:15px}
+.md p{margin:0 0 8px}
+code{background:var(--panel2);border-radius:5px;padding:1px 5px;font:13px ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}
+pre.code{position:relative;background:#0d0f1f;color:#e8eaff;border-radius:10px;padding:12px;overflow-x:auto;margin:6px 0;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre.code code{background:none;padding:0;color:inherit;white-space:pre;overflow-wrap:normal}
+.cp{position:absolute;top:6px;right:6px;font-size:12px;border:0;border-radius:6px;background:#2a2e4a;color:#fff;padding:3px 8px}
+a{color:var(--link)}
+.at{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--link);border-radius:4px;padding:0 3px;font-weight:600}
+.att{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.att img{max-width:min(340px,100%);max-height:260px;border-radius:10px;display:block;cursor:zoom-in;background:var(--panel2)}
+.att video{max-width:min(420px,100%);max-height:300px;border-radius:10px}
+.fchip{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--panel);text-decoration:none;color:var(--ink);font-size:14px}
+.acts{position:absolute;right:8px;top:-14px;display:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px;z-index:2}
+.msg:hover .acts,.msg:focus-within .acts{display:flex}
+.acts button{border:0;background:none;width:30px;height:28px;border-radius:6px;display:grid;place-items:center;color:var(--mute)}
+.acts button:hover{background:var(--panel2);color:var(--ink)}
+.rx{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.rx button{border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:0 8px;min-height:26px;font-size:13px}
+.rx button.me{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 12%,var(--panel))}
+.tray{display:none}.msg.tr .tray{display:flex}
+.sys{text-align:center;font-size:13px;color:var(--mute);padding:6px}
+.typing{font-size:13px;color:var(--mute);padding:0 18px;min-height:20px}
+.pend{display:flex;gap:8px;flex-wrap:wrap;padding:0 18px}
+.pend:empty{display:none}
+.pchip{display:flex;align-items:center;gap:6px;background:var(--panel2);border-radius:10px;padding:4px 6px 4px 4px;font-size:13px;max-width:240px}
+.pchip img{width:40px;height:40px;object-fit:cover;border-radius:7px}
+.pchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pchip button{border:0;background:none;font-size:18px;line-height:1;padding:0 4px;color:var(--mute)}
+.pend.busy{opacity:.6}
+.composer{display:flex;gap:8px;align-items:flex-end;padding:10px 14px 14px;background:var(--panel)}
+.composer textarea{min-height:44px;max-height:180px;resize:none}
+.iconBtn{display:grid;place-items:center;width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel);cursor:pointer;flex:none;color:var(--mute)}
+.iconBtn:hover{border-color:var(--blue);color:var(--ink)}
+.composer .btn{height:44px}
+/* ai */
+.ai{display:flex;flex-direction:column;flex:1;min-height:0}
+.aiMsgs{flex:1;overflow:auto;padding:20px max(16px,calc((100% - 840px)/2))}
+.aiIntro{display:grid;gap:10px;max-width:640px;margin:4vh auto 0;text-align:center;justify-items:center}
+.aiIntro h3{font-size:26px}
+.bub{margin:0 0 14px}
+.bub.u{margin-left:auto;max-width:80%;background:var(--blue);color:#fff;padding:10px 14px;border-radius:14px 14px 4px 14px;white-space:pre-wrap;width:fit-content;overflow-wrap:anywhere}
+.bub.a{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
+.toolNote{font-size:12px;color:var(--mute);margin:0 0 6px}
+.dots{display:inline-flex;gap:4px}.dots i{width:7px;height:7px;border-radius:50%;background:var(--mute);animation:bl 1s infinite}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes bl{50%{opacity:.25}}
+.aiBottom{border-top:1px solid var(--line);background:var(--panel);padding-top:10px}
+.aiChips{display:flex;gap:6px;overflow-x:auto;padding:0 14px 2px}
+.aiChips .chip{flex:none}
+.aiOpts{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:0 14px 12px;font-size:13px}
+.aiOpts .chk{font-size:13px}
+/* files / notes / handoffs */
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:14px}
+.fcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:grid}
+.fthumb{aspect-ratio:4/3;background:var(--panel2);display:grid;place-items:center;color:var(--mute);font-weight:700;font-size:20px}
+.fthumb img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+.fmeta{padding:10px;display:grid;gap:2px;font-size:13px}
+.fmeta b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fact{display:flex;gap:4px;padding:0 6px 8px}
+.notes textarea{min-height:60vh;font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--panel)}
+.ho{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:grid;gap:6px}
+.ho.s-done{opacity:.65}
+.hoH{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.ho p{margin:0}
+.stchip.s-new{background:var(--pink);color:#fff}.stchip.s-ack{background:var(--sun);color:#1b1b1b}
+/* modal / toasts */
+.modal{position:fixed;inset:0;background:rgba(8,10,30,.55);display:grid;place-items:center;padding:16px;z-index:50}
+.mbox{background:var(--panel);border-radius:16px;max-width:580px;width:100%;max-height:92vh;overflow:auto;padding:22px;position:relative;display:grid;gap:14px}
+.mbox h3{font-size:21px;padding-right:36px}
+.mx{position:absolute;top:12px;right:12px;width:36px;height:36px;border:0;border-radius:10px;background:var(--panel2);font-size:20px}
+.seg2{display:flex;gap:6px;flex-wrap:wrap}
+.pill{position:relative}
+.pill input{position:absolute;opacity:0}
+.pill span{display:block;border:1px solid var(--line);border-radius:99px;padding:7px 12px;font-size:14px;color:var(--ink);cursor:pointer}
+.pill input:checked+span{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pill input:focus-visible+span{outline:3px solid var(--sun)}
+.codeBox{font-family:"Pixelify Sans",monospace;font-size:28px;letter-spacing:2px;background:var(--panel2);border-radius:10px;padding:10px 14px;text-align:center;user-select:all}
+.copyArea{font:13px ui-monospace,monospace;min-height:84px}
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:grid;place-items:center;z-index:70;padding:20px;cursor:zoom-out}
+#lightbox img{max-width:100%;max-height:100%;border-radius:8px}
+#toasts{position:fixed;right:16px;top:16px;display:grid;gap:10px;z-index:60;width:min(370px,calc(100vw - 32px))}
+.toast{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--pink);border-radius:12px;padding:12px 14px;box-shadow:0 16px 34px -14px rgba(0,0,0,.45);display:grid;gap:6px;animation:pop .22s ease-out}
+.toast b{font-size:15px}.toast p{margin:0;font-size:14px;color:var(--mute);overflow-wrap:anywhere}
+@keyframes pop{from{transform:translateY(-8px);opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+@media(max-width:1180px){#main{grid-template-columns:220px minmax(0,1fr)}.team{display:none}}
+@media(max-width:900px){.two,.grid2f{grid-template-columns:minmax(0,1fr)}.hero{grid-template-columns:minmax(0,1fr)}.grid2{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:760px){
+ #main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+ .side{order:2;flex-direction:row;padding:4px;gap:0;overflow:visible}
+ .side>:not(nav){display:none}
+ nav{display:flex;width:100%;justify-content:space-around}
+ .nv{flex-direction:column;gap:2px;font-size:11px;min-height:52px;padding:4px 6px;flex:1;align-items:center}
+ .nv .bd{position:absolute;top:2px;right:2px;margin:0;font-size:11px;line-height:16px}
+ .tClock{display:block;flex:1;font-size:20px}.top h2{display:none}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .top{padding:10px 12px}.top h2{font-size:17px}
+ .top .lbl{display:none}
+ #view{padding:14px}
+ .chat{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+ .chans{display:flex;border-right:0;border-bottom:1px solid var(--line);padding:6px;overflow-x:auto;gap:4px}
+ .chans .chb{width:auto;flex:none}.chT{display:none}
+ .stRow{grid-template-columns:minmax(0,1fr)}
+ .board{grid-template-columns:repeat(4,minmax(80vw,1fr));scroll-snap-type:x mandatory}.col{scroll-snap-align:start}
+ .bub.u{max-width:92%}
+}
+@media(max-width:420px){.nv .lbl{display:none}.nv{min-height:46px}}
+audio{width:min(340px,100%);max-width:100%}
+.att>div{flex:1 1 280px;max-width:360px}.att>div audio{width:100%}
+.fthumb audio{width:92%}
+details summary{color:var(--link)}
+</style>
+</head>
+<body>
+<div id="boot" class="screen center"><div><div class="logo" id="bootLogo">Crunchroom</div><p id="bootMsg">Connecting…</p></div></div>
+
+<div id="auth" class="screen center" hidden>
+ <div class="obCard">
+  <div class="obTop"><div class="logo" id="authLogo">Crunchroom</div><h1 id="authTitle">Log in</h1><p class="small" style="opacity:.85;margin:6px 0 0">Your jam team's war room: chat, handoffs, task board and an AI copilot.</p></div>
+  <div class="obBody">
+   <div class="chips" role="tablist"><button class="chip on" type="button" data-auth="login">Log in</button><button class="chip" type="button" data-auth="register">Create account</button></div>
+   <form id="loginForm" class="stack">
+    <label class="f">Username<input name="username" required maxlength="20" autocomplete="username"></label>
+    <label class="f">Password<input name="password" type="password" required autocomplete="current-password"></label>
+    <p class="err" id="loginErr" hidden></p>
+    <button class="btn pri">Log in</button>
+   </form>
+   <form id="regForm" class="stack" hidden>
+    <label class="f">Username (this is your @handle)<input name="username" required maxlength="20" pattern="[A-Za-z0-9_.\-]{2,20}" autocomplete="username"></label>
+    <label class="f">Password (8+ characters)<input name="password" type="password" required minlength="8" autocomplete="new-password"></label>
+    <label class="f">Main role<select name="role" id="regRole"></select></label>
+    <div class="f">Colour<div class="swatches" id="regColors"></div></div>
+    <label class="f" id="regCodeWrap" hidden>Sign-up code (ask whoever runs this server)<input name="signup" autocomplete="off"></label>
+    <p class="err" id="regErr" hidden></p>
+    <button class="btn hot">Create account</button>
+   </form>
+  </div>
+ </div>
+</div>
+
+<div id="lobby" class="screen" hidden>
+ <header class="lobHead"><div class="lobIn"><div class="logo" id="lobLogo">Crunchroom</div><p>Chat with file drops, handoffs that ping the next person, a task board that unblocks people automatically, and an AI copilot that knows your board.</p><div class="row" style="margin-top:18px"><button class="meChip" id="lobMe" type="button" style="margin:0"></button><button class="btn sm" type="button" data-logout style="background:rgba(255,255,255,.12);color:#fff;border-color:transparent">Log out</button></div></div></header>
+ <div class="lobBody">
+  <section><h2 style="font-size:24px;margin-bottom:12px">Your workspaces</h2><div class="wsList" id="wsList"></div></section>
+  <div class="two">
+   <form class="card" id="createForm"><h3>Start a jam workspace</h3><div class="stack">
+    <div class="grid2f"><label class="f">Team name<input name="name" required maxlength="40" placeholder="Team Pixel Panic"></label><label class="f">Jam<input name="jam" maxlength="60" placeholder="Ludum Dare, GMTK, Global Game Jam…"></label></div>
+    <label class="f">Theme (leave blank until it's announced)<input name="theme" maxlength="80"></label>
+    <div class="grid2f"><label class="f">Jam starts<input name="start" type="datetime-local" required></label><label class="f">Submission deadline<input name="deadline" type="datetime-local" required></label></div>
+    <p class="err" id="createErr" hidden></p>
+    <button class="btn pri">Create workspace</button></div>
+   </form>
+   <form class="card" id="joinForm"><h3>Join your team</h3><div class="stack">
+    <label class="f">Invite link or code<input name="code" required placeholder="Paste the invite here"></label>
+    <p class="err" id="joinErr" hidden></p>
+    <button class="btn hot">Join workspace</button>
+    <p class="small muted">Workspaces are locked to their members: only people who joined with the invite can see its chat, board and files. Your notes and AI conversations are private to your account.</p></div>
+   </form>
+  </div>
+ </div>
+</div>
+
+<div id="main" hidden>
+ <aside class="side">
+  <div class="logo" id="sideLogo">Crunchroom</div>
+  <button class="wsBtn" id="wsBtn" type="button" title="Workspace settings"><b id="wsName"></b><small id="wsJam"></small></button>
+  <div class="sClock"><small>Time left</small><b id="sClock">--:--:--</b><small id="sPhase"></small></div>
+  <nav id="nav"></nav>
+  <div class="meCard" id="meCard"></div>
+ </aside>
+ <section class="content">
+  <header class="top"><h2 id="viewTitle"></h2><span class="tClock" id="tClock"></span><div class="row" id="topAct"></div></header>
+  <div id="banner" hidden></div>
+  <div id="view"></div>
+ </section>
+ <aside class="team" id="teamPanel"></aside>
+</div>
+
+<div id="modal" class="modal" hidden><div class="mbox" role="dialog" aria-modal="true"><button class="mx" type="button" data-close aria-label="Close">×</button><div id="mbody" class="stack"></div></div></div>
+<div id="lightbox" hidden><img id="lbImg" alt=""></div>
+<div id="toasts" aria-live="polite"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+{
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ROLES=['Programmer','Artist','Audio','Designer','Writer','Producer','QA','Generalist'];
+const TAGS=['Code','Art','Audio','Design','Writing','QA','Other'];
+const COLORS=['#2f3cff','#ff3d7f','#ff7a00','#0f9d63','#7c4dff','#0096b8','#d62f32','#a68600'];
+const STATUS={available:['Available','#20c77a'],focus:['Focus mode','#7c4dff'],blocked:['Blocked','#e23a3d'],away:['Away','#9aa0b7']};
+const COLS=[['todo','To do'],['doing','Doing'],['review','Review'],['done','Done']];
+const PRI={high:'High',med:'Medium',low:'Low'};
+const REACT={up:'👍',fire:'🔥',lol:'😂',eyes:'👀',ok:'✅',love:'❤️'};
+const KINDS={handoff:'Ready for you',review:'Needs review',blocked:'Blocked on you',question:'Quick question',assigned:'Assigned to you',unblocked:'Unblocked',mention:'Mentioned you'};
+const ACTIONABLE=['handoff','review','blocked','question','assigned'];
+const PHASES=[[0,'Ideate'],[.1,'Build'],[.7,'Polish'],[.9,'Ship']];
+const I={home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',chat:'<path d="M4 5h16v11H9l-5 4z"/>',board:'<rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="10" rx="1"/><rect x="17" y="4" width="4" height="13" rx="1"/>',baton:'<path d="M4 8h14l-4-4M20 16H6l4 4"/>',spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"/>',folder:'<path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',note:'<path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h5"/>',clip:'<path d="M20 11l-8.5 8.5a5 5 0 0 1-7-7L13 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L14 7"/>',send:'<path d="M4 12l16-8-6 16-3-7z"/>',plus:'<path d="M12 5v14M5 12h14"/>',link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',pin:'<path d="M9 4h6l-1 6 4 3H6l4-3z"/><path d="M12 13v7"/>',gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',snd:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9a4 4 0 0 1 0 6"/>',mute:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l4 6M21 9l-4 6"/>',smile:'<circle cx="12" cy="12" r="9"/><path d="M8 14a4 4 0 0 0 8 0M9 9h.01M15 9h.01"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',out:'<path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 8l-4 4 4 4M6 12h10"/>'};
+const ic=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${I[n]||''}</svg>`;
+const JAR=["..LLLLLLLL..",".LLLLLLLLLL.","..oooooooo..",".o........o.",".o.g......o.",".ojjjjjjjjo.",".ojwwwwwwjo.",".ojwhwwhwjo.",".ojwhhhhwjo.",".ojwwwwwwjo.",".ojjjjjjjjo.",".ojjjjjjjjo.","..oooooooo.."];
+const JC={L:'#ffd23f',o:'#0b0e3a',j:'#ff3d7f',w:'#ffffff',h:'#2f3cff',g:'#ffffff'};
+const jar=(px,cls='jar')=>{let r='';JAR.forEach((row,y)=>[...row].forEach((c,x)=>{if(JC[c])r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${JC[c]}"/>`}));return `<svg class="${cls}" viewBox="0 0 12 13" width="${px}" height="${Math.round(px*13/12)}" aria-hidden="true">${r}</svg>`};
+for(const id of ['bootLogo','authLogo','lobLogo','sideLogo']){const el=$('#'+id);if(el)el.insertAdjacentHTML('afterbegin',jar(id==='bootLogo'?64:id==='lobLogo'?52:28))}
+
+const S={me:null,cfg:{},wss:[],last:'',sock:null,started:false,shell:false,ws:null,meta:null,members:{},tasks:{},channels:{},notifs:[],files:[],msgs:{},more:{},online:new Set(),typing:{},lr:{},chan:'general',view:'dash',msgEls:new Map(),ai:{msgs:[]},aiBusy:false,pend:[],aiImgs:[],bf:{who:'',tag:''},hoTab:'me',ff:'all',fq:'',muted:false,focusEnd:0,stick:true};
+try{S.muted=localStorage.getItem('cr_mute')==='1';S.focusEnd=+localStorage.getItem('cr_focus')||0}catch(e){}
+
+/* ---------- helpers ---------- */
+const okColor=c=>/^#[0-9a-f]{6}$/i.test(c||'')?c:'#2f3cff';
+const mem=u=>S.members[u]||null;
+const nm=u=>u==='ai'?'Copilot':(mem(u)&&mem(u).handle)||(S.me&&u===S.me.id?S.me.username:'')||'Someone';
+const initials=h=>String(h||'?').replace(/[^A-Za-z0-9]/g,'').slice(0,2)||'?';
+function onlineSet(){const s=new Set(S.online);if(S.me)s.add(S.me.id);return s}
+function av(u,showDot,small){const m=mem(u)||(S.me&&u===S.me.id?S.me:{});const on=showDot&&onlineSet().has(u);return `<span class="av${small?' s':''}" style="--c:${okColor(m.color)}" title="${esc(nm(u))}">${esc(initials(nm(u)))}${showDot?`<i class="${on?'on':''}"></i>`:''}</span>`}
+const pad=n=>String(n).padStart(2,'0');
+function ago(t){const s=(Date.now()-t)/1000;if(s<45)return 'just now';if(s<3600)return Math.round(s/60)+'m ago';if(s<86400)return Math.round(s/3600)+'h ago';return new Date(t).toLocaleDateString([], {month:'short',day:'numeric'})}
+const clock=t=>new Date(t).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+const when=t=>new Date(t).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+const toLocalInput=ms=>{const d=new Date(ms);return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const fromLocalInput=v=>{const t=new Date(v).getTime();return isFinite(t)?t:null};
+const fsize=b=>b>1048576?(b/1048576).toFixed(1)+' MB':b>1024?Math.round(b/1024)+' KB':(b||0)+' B';
+const fileURL=id=>`/f/${encodeURIComponent(S.ws)}/${encodeURIComponent(id)}`;
+function fmtLeft(ms){if(ms<=0)return "TIME'S UP";const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),x=s%60;return (d?d+'d ':'')+pad(h)+':'+pad(m)+':'+pad(x)}
+function phaseOf(){const m=S.meta;if(!m||!m.deadline)return null;const st=m.start||m.at||Date.now(),dl=m.deadline,now=Date.now();if(now<st)return {p:0,name:'Starts '+when(st),idx:-1};const p=Math.min(1,(now-st)/Math.max(1,dl-st));let idx=0;PHASES.forEach((ph,i)=>{if(p>=ph[0])idx=i});return {p,name:p>=1?'Jam over':PHASES[idx][1]+' phase',idx}}
+function md(src,mentions){
+ const blocks=[];let s=String(src||'');
+ s=s.replace(/```[\w+-]*[^\S\n]*\n?([\s\S]*?)```/g,(_,c)=>{blocks.push(`<pre class="code"><button class="cp" type="button" data-copycode>Copy</button><code>${esc(c.replace(/\n$/,''))}</code></pre>`);return `\n\u0000${blocks.length-1}\u0000\n`});
+ s=esc(s).replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>').replace(/(^|[\s(])[*_]([^*_\n]+)[*_](?=$|[\s.,;:!?)])/g,'$1<i>$2</i>')
+  .replace(/(^|[\s(])(https?:\/\/[^\s<]+[^\s<.,;:!?)\]])/g,'$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');
+ if(mentions)s=s.replace(/(^|\s)@([A-Za-z0-9_.-]{2,20})/g,'$1<span class="at">@$2</span>');
+ const out=[];let list=null;const close=()=>{if(list){out.push(`</${list}>`);list=null}};
+ for(const line of s.split('\n')){let m;
+  if(m=line.match(/^\u0000(\d+)\u0000$/)){close();out.push(blocks[+m[1]])}
+  else if(m=line.match(/^#{1,4}\s+(.*)/)){close();out.push(`<h4>${m[1]}</h4>`)}
+  else if(m=line.match(/^\s*[-*•]\s+(.*)/)){if(list!=='ul'){close();out.push('<ul>');list='ul'}out.push(`<li>${m[1]}</li>`)}
+  else if(m=line.match(/^\s*\d+[.)]\s+(.*)/)){if(list!=='ol'){close();out.push('<ol>');list='ol'}out.push(`<li>${m[1]}</li>`)}
+  else{close();if(line.trim())out.push(`<p>${line}</p>`)}}
+ close();return out.join('');
+}
+
+/* ---------- ui primitives ---------- */
+function show(id){for(const s of ['boot','auth','lobby','main'])$('#'+s).hidden=s!==id}
+function modal(html,mount){$('#mbody').innerHTML=html;$('#modal').hidden=false;const b=$('#mbody');if(mount)mount(b);const f=b.querySelector('input:not([type=checkbox]):not([type=radio]),textarea,select');if(f)setTimeout(()=>f.focus(),30)}
+function closeModal(){$('#modal').hidden=true;$('#mbody').innerHTML=''}
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal'||e.target.closest('[data-close]'))closeModal()});
+function confirmBox(title,text,ok,fn){modal(`<h3>${esc(title)}</h3><p class="muted">${esc(text)}</p><div class="row end"><button class="btn" data-close type="button">Cancel</button><button class="btn hot" id="cfOk" type="button">${esc(ok)}</button></div>`,b=>{b.querySelector('#cfOk').onclick=()=>{closeModal();fn()}})}
+function toast(title,body,actions=[],ms=7000){const t=document.createElement('div');t.className='toast';const b=document.createElement('b');b.textContent=title;t.append(b);if(body){const p=document.createElement('p');p.textContent=body;t.append(p)}const r=document.createElement('div');r.className='row';for(const [l,fn] of actions){const x=document.createElement('button');x.className='btn sm';x.type='button';x.textContent=l;x.onclick=()=>{t.remove();fn()};r.append(x)}const c=document.createElement('button');c.className='btn sm ghost';c.type='button';c.textContent='Dismiss';c.onclick=()=>t.remove();r.append(c);t.append(r);$('#toasts').prepend(t);while($('#toasts').children.length>4)$('#toasts').lastChild.remove();if(ms)setTimeout(()=>t.remove(),ms)}
+function banner(text){const b=$('#banner');if(!text){b.hidden=true;return}b.textContent=text;b.hidden=false}
+function copyText(txt){const fallback=()=>modal(`<h3>Copy this</h3><textarea class="copyArea" readonly>${esc(txt)}</textarea>`,b=>{const a=b.querySelector('textarea');a.focus();a.select()});try{navigator.clipboard.writeText(txt).then(()=>toast('Copied',''),fallback)}catch(e){fallback()}}
+let AC=null;
+addEventListener('pointerdown',()=>{try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();else if(AC.state==='suspended')AC.resume()}catch(e){}},{capture:true});
+function beep(){if(!AC||S.muted||S.focusEnd>Date.now())return;try{const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type='square';o.frequency.setValueAtTime(784,t);o.frequency.setValueAtTime(1175,t+.09);g.gain.setValueAtTime(.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+.28);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+.3)}catch(e){}}
+
+/* ---------- server calls ---------- */
+function api(ev,p={}){return new Promise((res,rej)=>{if(!S.sock||!S.sock.connected)return rej(new Error('Not connected to the server. Reconnecting…'));S.sock.timeout(15000).emit(ev,p,(err,r)=>{if(err)rej(new Error('The server did not respond.'));else if(r&&r.error)rej(new Error(r.error));else res(r||{})})})}
+const w=(p,what='Save')=>p.catch(e=>{toast(what+' failed',e.message||'Try again.');return null});
+async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body||{}),credentials:'same-origin'});let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw new Error(j.error||('Request failed ('+r.status+')'));return j}
+
+/* ---------- boot / auth ---------- */
+async function boot(){
+ let r,j={};
+ try{r=await fetch('/api/me',{credentials:'same-origin'});j=await r.json()}catch(e){$('#bootMsg').textContent="Can't reach the Crunchroom server. Is it running?";setTimeout(boot,4000);return}
+ S.cfg=j.cfg||{};
+ if(r.status===401)return authScreen();
+ S.me=j.user;S.wss=j.wss||[];S.last=j.last||'';
+ connect();
+}
+function authScreen(mode){
+ show('auth');const reg=mode==='register'||(!mode&&new URLSearchParams(location.search).get('join')&&!localStorage.getItem('cr_seen'));
+ for(const c of $$('[data-auth]'))c.classList.toggle('on',(c.dataset.auth==='register')===!!reg);
+ $('#loginForm').hidden=!!reg;$('#regForm').hidden=!reg;$('#authTitle').textContent=reg?'Create your account':'Log in';
+ $('#regRole').innerHTML=ROLES.map(r=>`<option>${r}</option>`).join('');
+ $('#regColors').innerHTML=COLORS.map((c,i)=>`<label><input type="radio" name="color" value="${c}" ${i===0?'checked':''} aria-label="Colour ${i+1}"><span style="--c:${c}"></span></label>`).join('');
+ $('#regCodeWrap').hidden=!S.cfg.signupCode;
+}
+$$('[data-auth]').forEach(b=>b.onclick=()=>authScreen(b.dataset.auth));
+$('#loginForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const er=$('#loginErr');er.hidden=true;
+ try{await post('/api/login',{username:f.get('username'),password:f.get('password')});try{localStorage.setItem('cr_seen','1')}catch(x){}e.target.reset();boot()}catch(x){er.textContent=x.message;er.hidden=false}};
+$('#regForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const er=$('#regErr');er.hidden=true;
+ try{await post('/api/register',{username:String(f.get('username')).trim(),password:f.get('password'),role:f.get('role'),color:f.get('color'),signup:f.get('signup')||''});try{localStorage.setItem('cr_seen','1')}catch(x){}e.target.reset();boot()}catch(x){er.textContent=x.message;er.hidden=false}};
+async function logout(){try{await post('/api/logout')}catch(e){}if(S.sock){S.sock.disconnect();S.sock=null}location.href='/'}
+
+function connect(){
+ if(S.sock){if(S.sock.connected)afterLogin();return}
+ show('boot');$('#bootMsg').textContent='Connecting…';
+ const s=S.sock=io({withCredentials:true});
+ s.on('connect',()=>{banner('');if(!S.started){S.started=true;afterLogin()}else if(S.ws)resync()});
+ s.on('disconnect',()=>{if(S.started)banner('Lost connection to the server. Reconnecting…')});
+ s.on('connect_error',e=>{if(e&&e.message==='unauthorized'){s.disconnect();S.sock=null;S.started=false;authScreen()}else if(!S.started)$('#bootMsg').textContent="Can't connect to the server. Retrying…";else banner('Lost connection to the server. Reconnecting…')});
+ s.on('up',({ws,type,item})=>{if(ws!==S.ws)return;applyUp(type,item);bump()});
+ s.on('rm',({ws,type,id})=>{if(ws!==S.ws)return;if(type==='tasks')delete S.tasks[id];else if(type==='files')S.files=S.files.filter(f=>f.id!==id);else if(type==='members'){delete S.members[id];S.online.delete(id)}bump()});
+ s.on('msg',({ws,ch,m})=>{if(ws!==S.ws)return;const l=S.msgs[ch];if(l){const i=l.findIndex(x=>x.id===m.id);if(i>=0)l[i]=m;else l.push(m)}if(ch===S.chan&&S.view==='chat')markRead(ch);if(m.u&&S.typing[ch])delete S.typing[ch][m.k==='ai'?'ai':m.u];bump()});
+ s.on('typing',({ws,ch,uid,on})=>{if(ws!==S.ws)return;const t=S.typing[ch]=S.typing[ch]||{};if(on)t[uid]=Date.now();else delete t[uid];bump()});
+ s.on('online',({ws,uid,on})=>{if(ws!==S.ws)return;if(on)S.online.add(uid);else S.online.delete(uid);bump()});
+ s.on('kicked',({ws})=>{if(ws===S.ws){S.ws=null;lobby('You were removed from that workspace.')}});
+}
+function afterLogin(){
+ const q=new URLSearchParams(location.search).get('join');
+ if(q){try{history.replaceState(null,'','/')}catch(e){}return askJoin(q.toLowerCase())}
+ if(S.last&&S.wss.some(x=>x.id===S.last))return openWs(S.last);
+ lobby();
+}
+function codeFrom(v){v=String(v||'').trim();const m=v.match(/\/join\/([a-z0-9]{6,16})/i)||v.match(/[?&]join=([a-z0-9]{6,16})/i)||v.match(/^([a-z0-9]{6,16})$/i);return m?m[1].toLowerCase():null}
+
+/* ---------- lobby ---------- */
+async function lobby(msg){
+ S.ws=null;S.meta=null;flushNotes();show('lobby');
+ try{const r=await fetch('/api/me',{credentials:'same-origin'});if(r.status===401)return authScreen();const j=await r.json();S.me=j.user;S.wss=j.wss||[]}catch(e){}
+ $('#lobMe').innerHTML=`<span class="av" style="--c:${okColor(S.me.color)}">${esc(initials(S.me.username))}</span><span><b>${esc(S.me.username)}</b> · ${esc(S.me.role)}</span>`;$('#lobMe').onclick=()=>profileModal();
+ $('#wsList').innerHTML=S.wss.length?S.wss.map(x=>`<button class="wsCard" type="button" data-open="${esc(x.id)}"><b>${esc(x.name)}</b><span class="muted small">${esc(x.jam||'Game jam')} · ${x.deadline>Date.now()?esc(fmtLeft(x.deadline-Date.now()))+' left':'finished'}</span></button>`).join(''):`<p class="muted">No workspaces yet. Start one for your team, or paste the invite a teammate sent you.</p>`;
+ $('#wsList').onclick=e=>{const b=e.target.closest('[data-open]');if(b)openWs(b.dataset.open)};
+ const cf=$('#createForm');cf.start.value=toLocalInput(Date.now());cf.deadline.value=toLocalInput(Date.now()+48*3600e3);
+ cf.onsubmit=async e=>{e.preventDefault();const f=new FormData(cf);const start=fromLocalInput(f.get('start')),deadline=fromLocalInput(f.get('deadline'));const err=$('#createErr');
+  if(!start||!deadline||deadline<=start){err.textContent='The deadline needs to be after the start.';err.hidden=false;return}err.hidden=true;
+  const btn=cf.querySelector('button');btn.disabled=true;
+  try{const r=await api('ws:create',{name:f.get('name'),jam:f.get('jam'),theme:f.get('theme'),start,deadline});cf.reset();await openWs(r.id);setTimeout(()=>inviteModal(true),300)}
+  catch(x){err.textContent=x.message;err.hidden=false}
+  btn.disabled=false};
+ const jf=$('#joinForm');jf.onsubmit=e=>{e.preventDefault();const c=codeFrom(jf.code.value);if(!c){$('#joinErr').textContent="That doesn't look like a Crunchroom invite.";$('#joinErr').hidden=false;return}$('#joinErr').hidden=true;askJoin(c)};
+ $('#joinErr').hidden=!msg;if(msg)$('#joinErr').textContent=msg;
+}
+async function askJoin(code){
+ let p;try{p=await api('ws:preview',{code})}catch(e){if(!S.ws)return lobby(e.message);return toast('Invite not found',e.message)}
+ if(p.member)return openWs(p.id);
+ modal(`<h3>Join “${esc(p.name)}”?</h3><p class="muted">${esc(p.jam||'Game jam')}${p.theme?` · Theme: ${esc(p.theme)}`:''} · Deadline ${esc(when(p.deadline))}</p><p class="small muted">You'll appear to the team as <b>@${esc(S.me.username)}</b> (${esc(S.me.role)}).</p><div class="row end"><button class="btn" data-close type="button">Not now</button><button class="btn hot" id="doJoin" type="button">Join team</button></div>`,b=>{
+  b.querySelector('#doJoin').onclick=async()=>{const btn=b.querySelector('#doJoin');btn.disabled=true;try{const r=await api('ws:join',{code});closeModal();openWs(r.id)}catch(e){btn.disabled=false;toast('Join failed',e.message)}}});
+ if(!S.ws&&$('#lobby').hidden)lobby();
+}
+
+/* ---------- workspace lifecycle ---------- */
+function loadState(st){
+ S.meta=st.meta;S.members={};for(const m of st.members||[])S.members[m.uid]=m;
+ S.channels={};for(const [k,v] of Object.entries(st.channels||{}))S.channels[k]=Object.assign({id:k},v);
+ S.tasks={};for(const t of st.tasks||[])S.tasks[t.id]=t;S.notifs=st.notifs||[];S.files=st.files||[];S.online=new Set(st.online||[]);S.lr=st.lr||{};
+}
+async function openWs(id){
+ let st;try{st=await api('ws:open',{ws:id})}catch(e){return lobby(e.message)}
+ const switching=S.ws!==id;flushNotes();S.ws=id;loadState(st);
+ if(switching){S.chan='general';S.msgs={};S.more={};S.typing={};S.ai={msgs:[]};S.msgEls=new Map()}
+ show('main');if(!S.shell){buildShell();S.shell=true}
+ loadChan(S.chan).catch(()=>{});loadAI();
+ go(switching?'dash':S.view);tick();
+}
+async function resync(){try{const st=await api('ws:open',{ws:S.ws});loadState(st);S.msgs={};S.more={};S.msgEls=new Map();const l=$('#msgList');if(l)l.innerHTML='';await loadChan(S.chan);bump()}catch(e){lobby(e.message)}}
+function applyUp(type,item){
+ if(type==='tasks')S.tasks[item.id]=item;
+ else if(type==='members')S.members[item.uid]=item;
+ else if(type==='channels')S.channels[item.id]=item;
+ else if(type==='meta'){S.meta=item;tick()}
+ else if(type==='files'){const i=S.files.findIndex(f=>f.id===item.id);if(i>=0)S.files[i]=item;else S.files.unshift(item)}
+ else if(type==='notifs'){const i=S.notifs.findIndex(n=>n.id===item.id);const prev=i>=0?S.notifs[i]:null;if(i>=0)S.notifs[i]=item;else S.notifs.unshift(item);
+  if(!prev&&item.to===S.me.id&&item.st==='new')notifToast(item);
+  if(prev&&item.from===S.me.id&&prev.st!==item.st&&(item.st==='ack'||item.st==='done')&&ACTIONABLE.includes(item.kind))toast(`${nm(item.to)} ${item.st==='ack'?'is on it':'marked it done'}`,item.text||KINDS[item.kind])}
+}
+let raf=0;function bump(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;if(!S.ws)return;renderSide();$('#teamPanel').innerHTML=teamHTML();const V=VIEWS[S.view];if(V&&V.refresh)V.refresh()})}
+
+/* ---------- shell ---------- */
+const NAV=[['dash','Dashboard','home'],['chat','Chat','chat'],['board','Task board','board'],['handoffs','Handoffs','baton'],['ai','AI copilot','spark'],['files','Files','folder'],['notes','My notes','note']];
+function buildShell(){
+ $('#nav').innerHTML=NAV.map(([v,l,i],k)=>`<button class="nv" type="button" data-go="${v}" title="${l} (Alt+${k+1})">${ic(i)}<span class="lbl">${l}</span><span class="bd" id="bd-${v}" hidden></span></button>`).join('');
+ $('#topAct').innerHTML=`<button class="btn" type="button" data-invite title="Invite teammates">${ic('link')}<span class="lbl">Invite</span></button><button class="btn hot" type="button" data-handoff title="Hand off or ping a teammate">${ic('baton')}<span class="lbl">Hand off</span></button><button class="btn ghost" type="button" data-settings title="Workspace settings" aria-label="Workspace settings">${ic('gear')}</button>`;
+ $('#wsBtn').onclick=()=>settingsModal();
+}
+function unreadChan(id){const c=S.channels[id];if(!c||!c.lastAt||c.lastBy===S.me.id)return false;if(S.view==='chat'&&S.chan===id)return false;return c.lastAt>(S.lr[id]||0)}
+function myPending(){return S.notifs.filter(n=>n.to===S.me.id&&(n.st==='new'||(n.st==='ack'&&ACTIONABLE.includes(n.kind))))}
+function renderSide(){
+ const m=S.meta||{};$('#wsName').textContent=m.name||'…';$('#wsJam').textContent=(m.jam||'Game jam')+(m.theme?' · '+m.theme:'');
+ for(const b of $$('.nv'))b.classList.toggle('on',b.dataset.go===S.view);
+ const setBd=(v,n)=>{const e=$('#bd-'+v);if(e){e.hidden=!n;e.textContent=n}};
+ setBd('chat',Object.keys(S.channels).filter(unreadChan).length);
+ setBd('handoffs',S.notifs.filter(n=>n.to===S.me.id&&n.st==='new').length);
+ setBd('board',Object.values(S.tasks).filter(t=>t.who===S.me.id&&t.st==='doing').length);
+ const me=mem(S.me.id)||{};const st=STATUS[me.st]||STATUS.available;const foc=S.focusEnd>Date.now();
+ $('#meCard').innerHTML=`<div class="row">${av(S.me.id,true)}<div style="display:grid;font-size:13px;flex:1"><b style="font-size:14px">${esc(S.me.username)}</b><span class="st" style="--s:${st[1]}">${foc?'Focus · '+fmtLeft(S.focusEnd-Date.now()).slice(-5):st[0]}</span></div></div><div class="row" style="flex-wrap:nowrap"><button class="btn sm" type="button" data-profile title="Your profile">${ic('user')}</button><button class="btn sm" type="button" data-mute title="${S.muted?'Unmute':'Mute'} ping sounds">${ic(S.muted?'mute':'snd')}</button><button class="btn sm" type="button" data-logout title="Log out">${ic('out')}</button><button class="btn sm grow" type="button" data-lobby>Switch</button></div>`;
+}
+function teamHTML(){
+ const on=onlineSet();const ms=Object.values(S.members).sort((a,b)=>(on.has(b.uid)-on.has(a.uid))||String(a.handle).localeCompare(String(b.handle)));
+ return `<h3>Team <span class="muted small" style="font-weight:400">${ms.filter(m=>on.has(m.uid)).length} online</span><span class="grow"></span><button class="btn sm" type="button" data-invite>${ic('plus')} Invite</button></h3>`+ms.map(m=>{const doing=Object.values(S.tasks).find(t=>t.who===m.uid&&t.st==='doing');const st=STATUS[m.st]||STATUS.available;
+  return `<div class="mem">${av(m.uid,true)}<div class="mi"><b>${esc(m.handle)}${m.uid===S.me.id?' <span class="muted" style="font-weight:400">(you)</span>':''}</b><span class="muted">${esc(m.role||'')} · <span class="st" style="--s:${st[1]}">${st[0]}</span></span>${m.note?`<span class="note">“${esc(m.note)}”</span>`:''}${doing?`<span class="doing">On: ${esc(doing.title)}</span>`:''}${!on.has(m.uid)&&m.seen?`<span class="muted">Seen ${ago(m.seen)}</span>`:''}</div>${m.uid!==S.me.id?`<button class="btn sm ghost" type="button" data-ping="${esc(m.uid)}" title="Hand off or ping ${esc(m.handle)}" aria-label="Ping ${esc(m.handle)}">${ic('baton')}</button>`:'<span></span>'}</div>`}).join('');
+}
+const VIEWS={dash:{t:'Dashboard',enter:dashEnter,refresh:dashRefresh},chat:{t:'Chat',flush:true,enter:chatEnter,refresh:chatRefresh},board:{t:'Task board',enter:boardEnter,refresh:boardRefresh},handoffs:{t:'Handoffs',enter:hoEnter,refresh:hoRefresh},ai:{t:'AI copilot',flush:true,enter:aiEnter,refresh:aiRefresh},files:{t:'Files',enter:filesEnter,refresh:filesRefresh},notes:{t:'My notes',enter:notesEnter}};
+function go(v){if(!VIEWS[v])v='dash';if(S.view==='notes'&&v!=='notes')flushNotes();if(S.view==='chat'&&v!=='chat')stopTyping();S.view=v;const V=VIEWS[v];$('#viewTitle').textContent=V.t;const el=$('#view');el.className=V.flush?'flush':'';el.innerHTML='';el.scrollTop=0;V.enter(el);if(V.refresh)V.refresh();renderSide();$('#teamPanel').innerHTML=teamHTML()}
+
+/* ---------- clock ---------- */
+function tick(){
+ if(!S.ws||!S.meta)return;const m=S.meta,left=(m.deadline||0)-Date.now(),ph=phaseOf();const txt=fmtLeft(left);
+ $('#sClock').textContent=txt;$('#tClock').textContent=txt;$('#sPhase').textContent=ph?ph.name+(left>0&&left<2*3600e3?' · submit soon!':''):'';
+ const dc=$('#dClock');if(dc)dc.textContent=txt;
+ const tr=$('#dTrack');if(tr&&ph){tr.innerHTML=`<div class="track">${PHASES.map((x,i)=>{const a=x[0],b=i<PHASES.length-1?PHASES[i+1][0]:1;const fill=Math.max(0,Math.min(1,(ph.p-a)/(b-a)));return `<div class="seg ${i===ph.idx?'now':''}" style="flex:${b-a}"><span><i style="width:${(fill*100).toFixed(1)}%"></i></span><em>${x[1]}</em></div>`}).join('')}</div>`}
+ if(S.focusEnd&&S.focusEnd<=Date.now()){S.focusEnd=0;try{localStorage.removeItem('cr_focus')}catch(e){}beep();toast('Focus session done','Nice work. Your status is back to Available.');setStatus('available')}
+ const fl=$('#fLeft');if(fl){const f=S.focusEnd>Date.now();fl.textContent=f?fmtLeft(S.focusEnd-Date.now()).slice(-5):'';const fs=$('#fStop');if(fs)fs.hidden=!f}
+ if(S.focusEnd>Date.now()&&Date.now()%5000<1000)renderSide();
+}
+setInterval(tick,1000);
+
+/* ---------- pings / handoffs ---------- */
+const setNotif=(id,st)=>w(api('notif:set',{ws:S.ws,id,st}),'Update');
+const setStatus=(st,note)=>w(api('member:status',{ws:S.ws,st,...(note!==undefined?{note}:{})}),'Status');
+function notifToast(n){
+ const t=n.task&&S.tasks[n.task];const body=(n.text||'')+(t&&n.text!==t.title?` (task: ${t.title})`:'');const acts=[];
+ if(ACTIONABLE.includes(n.kind)){acts.push(['On it',()=>setNotif(n.id,'ack')]);acts.push(['View',()=>go('handoffs')])}
+ else if(n.kind==='mention')acts.push(['Open chat',()=>{setNotif(n.id,'done');openChan(n.ch||'general')}]);
+ else if(n.kind==='unblocked')acts.push(['Open board',()=>{setNotif(n.id,'done');go('board')}]);
+ toast(`${nm(n.from)}: ${KINDS[n.kind]||'Ping'}`,body,acts,12000);beep();
+}
+function handoffModal(pre={}){
+ const others=Object.values(S.members).filter(m=>m.uid!==S.me.id);
+ if(!others.length)return modal(`<h3>No teammates yet</h3><p class="muted">Invite your team first. Once they've joined you can pass work to them here and they'll get pinged instantly.</p><div class="row end"><button class="btn pri" type="button" data-invite>Invite teammates</button></div>`);
+ const tasks=Object.values(S.tasks).filter(t=>t.st!=='done'||t.id===pre.task);const kind=pre.kind||'handoff';
+ modal(`<h3>Hand off or ping a teammate</h3><form id="hoForm" class="stack">
+  <label class="f">To<select name="to">${others.map(m=>`<option value="${esc(m.uid)}" ${pre.to===m.uid?'selected':''}>${esc(m.handle)} · ${esc(m.role||'')}</option>`).join('')}<option value="*">Whole team</option></select></label>
+  <div class="f">What's up<div class="seg2">${['handoff','review','blocked','question'].map(k=>`<label class="pill"><input type="radio" name="kind" value="${k}" ${kind===k?'checked':''}><span>${KINDS[k]}</span></label>`).join('')}</div></div>
+  <label class="f">Message<textarea name="text" rows="3" maxlength="500" placeholder="e.g. Player sprite sheet is in Files. Ready for you to wire up the run animation.">${esc(pre.text||'')}</textarea></label>
+  <label class="f">Related task (optional)<select name="task"><option value="">None</option>${tasks.map(t=>`<option value="${esc(t.id)}" ${pre.task===t.id?'selected':''}>${esc(t.title)}</option>`).join('')}</select></label>
+  <label class="chk"><input type="checkbox" name="done" ${pre.task&&kind==='handoff'?'checked':''}> I'm finished: move the related task to Done</label>
+  <label class="chk"><input type="checkbox" name="assign" ${pre.task&&kind==='review'?'checked':''}> Assign the related task to them</label>
+  <p class="err" id="hoErr" hidden></p>
+  <div class="row end"><button type="button" class="btn" data-close>Cancel</button><button class="btn hot">Send ping ${ic('send')}</button></div></form>`,b=>{
+  b.querySelector('#hoForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const to=String(f.get('to')),kd=String(f.get('kind')||'handoff');const btn=e.target.querySelector('button.hot');btn.disabled=true;
+   try{const r=await api('notif:send',{ws:S.ws,to,kind:kd,text:String(f.get('text')||''),task:String(f.get('task')||''),done:!!f.get('done'),assign:!!f.get('assign')});closeModal();toast('Ping sent',`${KINDS[kd]} → ${to==='*'?'the whole team':nm(to)}${r.unblocked?` (and ${r.unblocked} more unblocked)`:''}`)}
+   catch(x){btn.disabled=false;const er=b.querySelector('#hoErr');er.textContent=x.message;er.hidden=false}}});
+}
+const inviteURL=()=>`${location.origin}/join/${S.meta?S.meta.invite:''}`;
+const inviteText=()=>`Join our game jam team "${(S.meta||{}).name||'Crunchroom'}" on Crunchroom:\n${inviteURL()}\n(or log in and paste invite code ${(S.meta||{}).invite||''})`;
+function inviteModal(fresh){
+ const local=/^(localhost|127\.|\[::1\])/.test(location.hostname);
+ modal(`<h3>${fresh?'Workspace ready. Invite your team':'Invite teammates'}</h3>
+ <p class="muted">Send this invite. Teammates open the link, create an account (or log in), and join this workspace.</p>
+ <div class="codeBox">${esc((S.meta||{}).invite||'')}</div>
+ <textarea class="copyArea" readonly>${esc(inviteText())}</textarea>
+ <div class="row"><button class="btn pri" type="button" id="cpInv">${ic('link')} Copy invite</button><button class="btn" type="button" id="cpCode">Copy code only</button></div>
+ ${local?`<p class="small" style="background:var(--sun);color:#1b1b1b;padding:10px 12px;border-radius:10px">You're on <b>localhost</b>, so this link only works on your computer. Teammates need your network address (shown in the terminal where the server runs) or a public URL. See the README.</p>`:''}
+ <p class="small muted">Anyone holding the invite can join. If it leaks, the workspace creator can reset it in Settings.</p>`,b=>{b.querySelector('#cpInv').onclick=()=>copyText(inviteText());b.querySelector('#cpCode').onclick=()=>copyText((S.meta||{}).invite||'')});
+}
+function settingsModal(){
+ const m=S.meta||{};const ms=Object.values(S.members);const lead=m.by===S.me.id;
+ modal(`<h3>Workspace settings</h3><form id="setForm" class="stack">
+  <label class="f">Team name<input name="name" required maxlength="40" value="${esc(m.name||'')}"></label>
+  <div class="grid2f"><label class="f">Jam<input name="jam" maxlength="60" value="${esc(m.jam||'')}"></label><label class="f">Theme<input name="theme" maxlength="80" value="${esc(m.theme||'')}" placeholder="Not announced yet"></label></div>
+  <div class="grid2f"><label class="f">Jam starts<input name="start" type="datetime-local" value="${toLocalInput(m.start||m.at||Date.now())}"></label><label class="f">Submission deadline<input name="deadline" type="datetime-local" value="${toLocalInput(m.deadline||Date.now())}"></label></div>
+  <p class="err" id="setErr" hidden></p>
+  <div class="row end"><button class="btn pri">Save changes</button></div></form>
+  <div class="stack"><b>Members (${ms.length})</b>${ms.map(x=>`<div class="row">${av(x.uid,true,true)}<span class="grow">${esc(x.handle)} <span class="muted small">${esc(x.role||'')}${x.uid===m.by?' · created this':''}</span></span>${lead&&x.uid!==S.me.id?`<button class="btn sm ghost" type="button" data-kick="${esc(x.uid)}">Remove</button>`:''}</div>`).join('')}</div>
+  <div class="row"><button class="btn" type="button" data-invite>${ic('link')} Invite</button>${lead?'<button class="btn" type="button" id="resetInv">Reset invite code</button>':''}<button class="btn" type="button" data-lobby>Switch workspace</button><span class="grow"></span><button class="btn ghost" type="button" id="leaveWs" style="color:var(--bad)">Leave</button></div>`,b=>{
+  b.querySelector('#setForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const start=fromLocalInput(f.get('start')),deadline=fromLocalInput(f.get('deadline'));const er=b.querySelector('#setErr');
+   if(!start||!deadline||deadline<=start){er.textContent='The deadline needs to be after the start.';er.hidden=false;return}
+   try{await api('ws:update',{ws:S.ws,name:f.get('name'),jam:f.get('jam'),theme:f.get('theme'),start,deadline});closeModal();toast('Saved','Workspace settings updated for everyone.')}catch(x){er.textContent=x.message;er.hidden=false}};
+  const ri=b.querySelector('#resetInv');if(ri)ri.onclick=()=>confirmBox('Reset the invite code?','The old link and code stop working. Current members stay in.','Reset',async()=>{const r=await w(api('ws:invite',{ws:S.ws}),'Reset');if(r){S.meta.invite=r.invite;inviteModal()}});
+  b.querySelector('#leaveWs').onclick=()=>confirmBox('Leave this workspace?','You can rejoin later with the invite.','Leave',async()=>{const r=await w(api('ws:leave',{ws:S.ws}),'Leave');if(r)lobby()});
+  b.addEventListener('click',e=>{const k=e.target.closest('[data-kick]');if(k){const u=k.dataset.kick;confirmBox(`Remove ${nm(u)}?`,'They lose access to this workspace. Reset the invite code too if they still have it.','Remove',()=>w(api('ws:kick',{ws:S.ws,uid:u}),'Remove'))}});});
+}
+function profileModal(){
+ const p=S.me;
+ modal(`<h3>Your profile</h3><form id="pfForm" class="stack"><p class="muted" style="margin:0">Signed in as <b>@${esc(p.username)}</b></p><label class="f">Main role<select name="role">${ROLES.map(r=>`<option ${r===p.role?'selected':''}>${r}</option>`).join('')}</select></label><div class="f">Colour<div class="swatches">${COLORS.map((c,i)=>`<label><input type="radio" name="color" value="${c}" ${c===p.color?'checked':''} aria-label="Colour ${i+1}"><span style="--c:${c}"></span></label>`).join('')}</div></div>
+ <details><summary class="small" style="cursor:pointer">Change password</summary><div class="stack" style="margin-top:10px"><label class="f">Current password<input name="oldPassword" type="password" autocomplete="current-password"></label><label class="f">New password (8+ characters)<input name="newPassword" type="password" minlength="8" autocomplete="new-password"></label></div></details>
+ <p class="err" id="pfErr" hidden></p><div class="row"><button type="button" class="btn ghost" data-logout>${ic('out')} Log out</button><span class="grow"></span><button class="btn pri">Save</button></div></form>`,b=>{
+  b.querySelector('#pfForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);
+   try{const r=await api('profile:update',{role:f.get('role'),color:f.get('color')||p.color,oldPassword:f.get('oldPassword')||'',newPassword:f.get('newPassword')||''});S.me=r.user;closeModal();toast('Profile saved','');if(S.ws)bump();else lobby()}
+   catch(x){const er=b.querySelector('#pfErr');er.textContent=x.message;er.hidden=false}}});
+}
+
+/* ---------- tasks ---------- */
+async function moveTask(id,st){
+ const t=S.tasks[id];if(!t||t.st===st)return;
+ const r=await w(api('task:move',{ws:S.ws,id,st}),'Move task');if(!r)return;
+ if(st==='done')toast('Task done',r.unblocked?(r.unblocked===1?'Pinged the teammate whose task was waiting on it.':`Pinged ${r.unblocked} teammates whose tasks were waiting on it.`):t.title);
+ if(st==='review'&&Object.keys(S.members).length>1)toast('Moved to Review','Want someone to look at it?',[['Ask for review',()=>handoffModal({task:id,kind:'review'})]]);
+}
+function taskModal(id,pre={}){
+ const t=id?S.tasks[id]:Object.assign({title:'',desc:'',tag:'Code',pri:'med',who:'',st:'todo',dep:''},pre);if(!t)return;
+ const others=Object.values(S.tasks).filter(o=>o.id!==id);const ms=Object.values(S.members);
+ modal(`<h3>${id?'Edit task':'New task'}</h3><form id="tkForm" class="stack">
+  <label class="f">Title<input name="title" required maxlength="120" value="${esc(t.title)}" placeholder="e.g. Player jump + coyote time"></label>
+  <label class="f">Notes<textarea name="desc" rows="3" maxlength="2000">${esc(t.desc||'')}</textarea></label>
+  <div class="grid2f"><label class="f">Discipline<select name="tag">${TAGS.map(x=>`<option ${x===t.tag?'selected':''}>${x}</option>`).join('')}</select></label><label class="f">Priority<select name="pri">${Object.entries(PRI).map(([k,v])=>`<option value="${k}" ${k===t.pri?'selected':''}>${v}</option>`).join('')}</select></label></div>
+  <div class="grid2f"><label class="f">Assignee<select name="who"><option value="">Unassigned</option>${ms.map(m=>`<option value="${esc(m.uid)}" ${m.uid===t.who?'selected':''}>${esc(m.handle)}</option>`).join('')}</select></label><label class="f">Status<select name="st">${COLS.map(([k,v])=>`<option value="${k}" ${k===t.st?'selected':''}>${v}</option>`).join('')}</select></label></div>
+  <label class="f">Waiting on (they get pinged when it's done)<select name="dep"><option value="">Nothing</option>${others.map(o=>`<option value="${esc(o.id)}" ${o.id===t.dep?'selected':''}>${esc(o.title)}${o.st==='done'?' (done)':''}</option>`).join('')}</select></label>
+  <p class="err" id="tkErr" hidden></p>
+  <div class="row">${id?`<button type="button" class="btn ghost" id="tkDel" style="color:var(--bad)">${ic('trash')} Delete</button>`:''}<span class="grow"></span><button type="button" class="btn" data-close>Cancel</button><button class="btn pri">${id?'Save':'Add task'}</button></div></form>`,b=>{
+  b.querySelector('#tkForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const d={ws:S.ws,title:String(f.get('title')).trim(),desc:String(f.get('desc')||''),tag:String(f.get('tag')),pri:String(f.get('pri')),who:String(f.get('who')||''),dep:String(f.get('dep')||''),st:String(f.get('st'))};if(id)d.id=id;
+   try{const r=await api('task:save',d);closeModal();if(r.unblocked)toast('Task done',`Pinged ${r.unblocked} teammate${r.unblocked>1?'s':''} who were waiting on it.`)}catch(x){const er=b.querySelector('#tkErr');er.textContent=x.message;er.hidden=false}};
+  const del=b.querySelector('#tkDel');if(del)del.onclick=()=>confirmBox('Delete this task?',t.title,'Delete',()=>w(api('task:del',{ws:S.ws,id}),'Delete task'))});
+}
+
+/* ---------- dashboard ---------- */
+function dashEnter(el){
+ S.stFilled=false;
+ el.innerHTML=`<div class="dash"><section class="hero"><div class="heroTop"><div><p class="kick" id="dJam"></p><h1 id="dTheme"></h1></div>${jar(84,'jar heroJar')}</div><div class="big" id="dClock">--:--:--</div><div id="dTrack"></div><div class="stats" id="dStats"></div></section>
+ <section class="card statusBar"><form class="stRow" id="stForm"><label class="f">Status<select id="stSel">${Object.entries(STATUS).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join('')}</select></label><label class="f">What are you working on?<input id="stNote" maxlength="80" placeholder="e.g. enemy pathfinding"></label><button class="btn pri">Update</button></form>
+ <div class="focusRow"><button class="btn sm" type="button" data-focus="25">Focus 25 min</button><button class="btn sm" type="button" data-focus="50">Focus 50 min</button><button class="btn sm" type="button" data-focus="0" id="fStop" hidden>End focus</button><span id="fLeft" class="pix"></span><span class="muted small">Focus mode mutes ping sounds and tells the team you're heads-down.</span></div></section>
+ <div class="grid2"><section class="card"><div class="ch"><h3>Waiting on you</h3><button class="btn sm" type="button" data-go="handoffs">All handoffs</button></div><div id="dWait"></div></section>
+ <section class="card"><div class="ch"><h3>My tasks</h3><button class="btn sm" type="button" data-newtask>${ic('plus')} Task</button></div><div id="dMine"></div></section>
+ <section class="card"><div class="ch"><h3>Who's doing what</h3></div><div id="dTeam"></div></section>
+ <section class="card"><div class="ch"><h3>Recent activity</h3></div><div id="dFeed"></div></section></div></div>`;
+ $('#stForm').onsubmit=e=>{e.preventDefault();setStatus($('#stSel').value,$('#stNote').value.trim()).then(r=>{if(r)toast('Status updated','')})};
+ tick();
+}
+function waitItem(n){const t=n.task&&S.tasks[n.task];return `<div class="li k-${esc(n.kind)}">${av(n.from,false,true)}<div class="grow"><span><span class="kchip">${esc(KINDS[n.kind]||n.kind)}</span> <b>${esc(nm(n.from))}</b> <span class="muted small">${ago(n.at)}</span></span>${n.text?`<span>${esc(n.text)}</span>`:''}${t&&t.title!==n.text?`<span class="small muted">Task: ${esc(t.title)}</span>`:''}<span class="row">${ACTIONABLE.includes(n.kind)?`${n.st==='new'?`<button class="btn sm" type="button" data-nst="ack" data-nid="${esc(n.id)}">On it</button>`:'<span class="stchip s-ack">On it</span>'}<button class="btn sm pri" type="button" data-nst="done" data-nid="${esc(n.id)}">Done</button>`:n.kind==='mention'?`<button class="btn sm" type="button" data-openmention="${esc(n.id)}">Open chat</button>`:`<button class="btn sm" type="button" data-nst="done" data-nid="${esc(n.id)}">Got it</button>`}</span></div></div>`}
+function dashRefresh(){
+ if(!$('#dStats'))return;const m=S.meta||{};const ts=Object.values(S.tasks);const done=ts.filter(t=>t.st==='done').length;const on=onlineSet();
+ $('#dJam').textContent=(m.jam||'Game jam')+' · '+(m.name||'');$('#dTheme').textContent=m.theme?'Theme: '+m.theme:'Theme not announced yet';
+ const pend=myPending();
+ $('#dStats').innerHTML=`<div class="stat"><b>${done}/${ts.length}</b><small>tasks done</small></div><div class="stat"><b>${pend.length}</b><small>waiting on you</small></div><div class="stat"><b>${ts.filter(t=>t.who===S.me.id&&t.st!=='done').length}</b><small>your open tasks</small></div><div class="stat"><b>${Object.keys(S.members).filter(u=>on.has(u)).length}/${Object.keys(S.members).length}</b><small>teammates online</small></div>`;
+ $('#dWait').innerHTML=pend.length?pend.slice(0,6).map(waitItem).join(''):'<p class="empty">Nothing waiting on you. When a teammate hands work over, it lands here.</p>';
+ const order={doing:0,review:1,todo:2};const mine=ts.filter(t=>t.who===S.me.id&&t.st!=='done').sort((a,b)=>(order[a.st]-order[b.st])||((b.pri==='high')-(a.pri==='high')));
+ $('#dMine').innerHTML=mine.length?mine.slice(0,7).map(t=>{const dep=t.dep&&S.tasks[t.dep];return `<div class="li"><span class="tag tag-${esc(t.tag)}">${esc(t.tag)}</span><div class="grow"><a href="#" data-edit="${esc(t.id)}" style="color:inherit;text-decoration:none"><b style="font-weight:500">${esc(t.title)}</b></a>${dep&&dep.st!=='done'?`<span class="dep">Waiting on “${esc(dep.title)}”</span>`:''}</div><select data-move="${esc(t.id)}" aria-label="Status" style="width:auto;min-height:32px;padding:2px 8px;font-size:13px">${COLS.map(([k,v])=>`<option value="${k}" ${k===t.st?'selected':''}>${v}</option>`).join('')}</select></div>`}).join(''):'<p class="empty">No open tasks assigned to you. Grab one from the board.</p>';
+ $('#dTeam').innerHTML=Object.values(S.members).map(x=>{const doing=ts.filter(t=>t.who===x.uid&&t.st==='doing');const st=STATUS[x.st]||STATUS.available;return `<div class="li">${av(x.uid,true)}<div class="grow"><span><b>${esc(x.handle)}</b> <span class="muted small">${esc(x.role||'')} · <span class="st" style="--s:${st[1]}">${st[0]}</span></span></span>${x.note?`<span class="small">“${esc(x.note)}”</span>`:''}<span class="small muted">${doing.length?'Doing: '+doing.map(t=>esc(t.title)).join(', '):'Nothing in Doing'}</span></div></div>`}).join('');
+ const feed=[];for(const n of S.notifs.slice(0,25))if(n.kind!=='mention')feed.push({t:n.at,h:`${av(n.from,false,true)}<div class="grow"><span><b>${esc(nm(n.from))}</b> → <b>${esc(nm(n.to))}</b> <span class="kchip k-${esc(n.kind)}">${esc(KINDS[n.kind]||n.kind)}</span></span>${n.text?`<span class="small muted">${esc(n.text)}</span>`:''}</div>`});
+ for(const t of ts)if(t.done&&t.st==='done')feed.push({t:t.done,h:`${av(t.who||t.by,false,true)}<div class="grow"><span><b>${esc(nm(t.who||t.by))}</b> finished <b>${esc(t.title)}</b></span></div>`});
+ for(const f of S.files.slice(0,10))feed.push({t:f.at,h:`${av(f.by,false,true)}<div class="grow"><span><b>${esc(nm(f.by))}</b> uploaded ${esc(f.n)}</span></div>`});
+ feed.sort((a,b)=>b.t-a.t);
+ $('#dFeed').innerHTML=feed.length?feed.slice(0,8).map(x=>`<div class="li">${x.h}<span class="muted small" style="white-space:nowrap">${ago(x.t)}</span></div>`).join(''):'<p class="empty">Handoffs, finished tasks and uploads show up here.</p>';
+ const me=mem(S.me.id);if(me&&!S.stFilled&&document.activeElement!==$('#stNote')){$('#stSel').value=STATUS[me.st]?me.st:'available';$('#stNote').value=me.note||'';S.stFilled=true}
+}
+
+/* ---------- board ---------- */
+function boardEnter(el){
+ el.innerHTML=`<div class="bTop"><form class="qadd" id="qadd"><input id="qaddIn" maxlength="120" placeholder="Quick add a task and press Enter"><button class="btn pri">${ic('plus')}<span class="lbl">Add</span></button></form><button class="btn" type="button" data-newtask>Detailed task</button></div><div class="chips" id="bF" style="margin-bottom:12px"></div><div class="board" id="board"></div><p class="muted small">Drag cards between columns or use the status menu. Moving a task to Done pings anyone whose task was waiting on it.</p>`;
+ $('#qadd').onsubmit=async e=>{e.preventDefault();const v=$('#qaddIn').value.trim();if(!v)return;$('#qaddIn').value='';const tag={Programmer:'Code',Artist:'Art',Audio:'Audio',Designer:'Design',Writer:'Writing',QA:'QA'}[S.me.role]||'Other';await w(api('task:save',{ws:S.ws,title:v,tag,pri:'med'}),'Add task')};
+ $('#bF').onclick=e=>{const c=e.target.closest('[data-bf]');if(!c)return;const [k,v]=c.dataset.bf.split(':');S.bf[k]=S.bf[k]===v?'':v;boardRefresh()};
+ const bd=$('#board');
+ bd.addEventListener('dragstart',e=>{const c=e.target.closest('.tcard');if(!c)return;S.drag=c.dataset.tid;try{e.dataTransfer.setData('text/plain',S.drag);e.dataTransfer.effectAllowed='move'}catch(x){}});
+ bd.addEventListener('dragover',e=>{const c=e.target.closest('.col');if(!c||!S.drag)return;e.preventDefault();$$('.col.over').forEach(x=>x!==c&&x.classList.remove('over'));c.classList.add('over')});
+ bd.addEventListener('dragleave',e=>{const c=e.target.closest('.col');if(c&&!c.contains(e.relatedTarget))c.classList.remove('over')});
+ bd.addEventListener('drop',e=>{const c=e.target.closest('.col');if(!c||!S.drag)return;e.preventDefault();c.classList.remove('over');const id=S.drag;S.drag=null;moveTask(id,c.dataset.col)});
+ bd.addEventListener('dragend',()=>{S.drag=null;$$('.col.over').forEach(x=>x.classList.remove('over'))});
+ bd.addEventListener('click',e=>{if(e.target.closest('select,button,a'))return;const c=e.target.closest('.tcard');if(c)taskModal(c.dataset.tid)});
+ bd.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.classList.contains('tcard'))taskModal(e.target.dataset.tid)});
+}
+function cardHTML(t){const dep=t.dep&&S.tasks[t.dep];return `<article class="tcard pri-${esc(t.pri)} ${t.st==='done'?'done':''}" draggable="true" data-tid="${esc(t.id)}" tabindex="0"><div class="row" style="gap:6px"><span class="tag tag-${esc(t.tag)}">${esc(t.tag)}</span>${t.pri==='high'?'<span class="tag" style="background:var(--pink);color:#fff">High</span>':''}</div><h4>${esc(t.title)}</h4>${dep?`<span class="dep ${dep.st==='done'?'ok':''}">${dep.st==='done'?'Unblocked: ':'Waiting on: '}${esc(dep.title)}</span>`:''}<div class="tfoot">${t.who?av(t.who,true,true):'<span class="muted small">Unassigned</span>'}<select data-move="${esc(t.id)}" aria-label="Move task">${COLS.map(([k,v])=>`<option value="${k}" ${k===t.st?'selected':''}>${v}</option>`).join('')}</select>${t.st!=='done'&&t.st!=='todo'?`<button class="btn sm" type="button" data-ho="${esc(t.id)}" title="Hand off" aria-label="Hand off">${ic('baton')}</button>`:''}</div></article>`}
+function boardRefresh(){
+ const bF=$('#bF');if(!bF)return;
+ bF.innerHTML=`<button class="chip ${S.bf.who==='me'?'on':''}" type="button" data-bf="who:me">My tasks</button>`+TAGS.map(t=>`<button class="chip ${S.bf.tag===t?'on':''}" type="button" data-bf="tag:${t}">${t}</button>`).join('');
+ const pr={high:0,med:1,low:2};const list=Object.values(S.tasks).filter(t=>(!S.bf.who||t.who===S.me.id)&&(!S.bf.tag||t.tag===S.bf.tag));
+ $('#board').innerHTML=COLS.map(([k,v])=>{const cs=list.filter(t=>t.st===k).sort((a,b)=>k==='done'?(b.done||0)-(a.done||0):(pr[a.pri]??1)-(pr[b.pri]??1)||(b.up||0)-(a.up||0));return `<div class="col" data-col="${k}"><div class="colH">${v} <span class="n">${cs.length}</span></div>${cs.map(cardHTML).join('')||`<p class="empty" style="padding:4px">${k==='todo'?'Add tasks above, or ask the AI copilot to break your idea down.':'Drop cards here'}</p>`}</div>`}).join('');
+}
+
+/* ---------- handoffs view ---------- */
+function hoEnter(el){el.innerHTML=`<div class="row" style="margin-bottom:14px"><div class="chips" id="hoTabs"></div><span class="grow"></span><button class="btn hot" type="button" data-handoff>${ic('baton')} New handoff</button></div><div id="hoList"></div>`;
+ $('#hoTabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(b){S.hoTab=b.dataset.tab;hoRefresh()}}}
+function hoItem(n){const mine=n.to===S.me.id,sent=n.from===S.me.id,t=n.task&&S.tasks[n.task];const stl={new:'New',ack:'On it',done:'Done'}[n.st]||n.st;
+ return `<div class="ho k-${esc(n.kind)} s-${esc(n.st)}"><div class="hoH"><span class="kchip">${esc(KINDS[n.kind]||n.kind)}</span>${av(n.from,false,true)}<b>${esc(nm(n.from))}</b>→${av(n.to,false,true)}<b>${esc(nm(n.to))}</b><span class="muted small">${ago(n.at)}</span><span class="grow"></span><span class="stchip s-${esc(n.st)}">${esc(stl)}</span></div>${n.text?`<p>${esc(n.text)}</p>`:''}${t?`<p class="small muted">Task: ${esc(t.title)} · ${esc((COLS.find(c=>c[0]===t.st)||[])[1]||'')}</p>`:''}<div class="row">${mine&&n.st!=='done'?`${n.st==='new'&&ACTIONABLE.includes(n.kind)?`<button class="btn sm" type="button" data-nst="ack" data-nid="${esc(n.id)}">On it</button>`:''}<button class="btn sm pri" type="button" data-nst="done" data-nid="${esc(n.id)}">${ACTIONABLE.includes(n.kind)?'Mark done':'Got it'}</button>`:''}${mine&&ACTIONABLE.includes(n.kind)?`<button class="btn sm ghost" type="button" data-ping="${esc(n.from)}">Reply</button>`:''}${n.kind==='mention'&&mine?`<button class="btn sm ghost" type="button" data-openmention="${esc(n.id)}">Open chat</button>`:''}${sent&&n.st!=='done'&&ACTIONABLE.includes(n.kind)?`<button class="btn sm ghost" type="button" data-nudge="${esc(n.id)}">Nudge again</button>`:''}</div></div>`}
+function hoRefresh(){const tb=$('#hoTabs');if(!tb)return;const cnt=S.notifs.filter(n=>n.to===S.me.id&&n.st!=='done').length;
+ tb.innerHTML=[['me',`To me${cnt?' ('+cnt+')':''}`],['sent','Sent by me'],['team','Whole team']].map(([k,l])=>`<button class="chip ${S.hoTab===k?'on':''}" type="button" data-tab="${k}">${l}</button>`).join('');
+ const l=S.notifs.filter(n=>S.hoTab==='me'?n.to===S.me.id:S.hoTab==='sent'?n.from===S.me.id:n.kind!=='mention');
+ const ord={new:0,ack:1,done:2};if(S.hoTab==='me')l.sort((a,b)=>(ord[a.st]??1)-(ord[b.st]??1)||b.at-a.at);
+ $('#hoList').innerHTML=l.length?l.map(hoItem).join(''):`<div class="card"><p class="empty">${S.hoTab==='me'?'Nothing here yet. When a teammate passes you work, flags you as a blocker or @mentions you, it shows up here and pops a notification.':'No handoffs yet. Finished something? Hit “Hand off” to tell the next person they can go.'}</p></div>`}
+
+/* ---------- chat ---------- */
+async function loadChan(ch,older){const l=S.msgs[ch];const before=older&&l&&l.length?l[0].t:0;const r=await api('chan:history',{ws:S.ws,ch,before});if(older&&S.msgs[ch])S.msgs[ch]=r.msgs.concat(S.msgs[ch]);else S.msgs[ch]=r.msgs;S.more[ch]=r.more;bump()}
+let lrT=0;function markRead(ch){S.lr[ch]=Date.now();clearTimeout(lrT);lrT=setTimeout(()=>api('read',{ws:S.ws,ch}).catch(()=>{}),1500)}
+function openChan(id){if(!id)id='general';if(id!==S.chan){stopTyping();S.chan=id;S.msgEls=new Map();const l=$('#msgList');if(l)l.innerHTML='';if(!S.msgs[id])loadChan(id).catch(e=>toast('Could not load chat',e.message))}if(S.view!=='chat')go('chat');else{markRead(id);chatRefresh();const ta=$('#msgIn');if(ta)ta.focus()}}
+function attHTML(a){const url=fileURL(a.id);const ty=String(a.ty||'');
+ if(/^image\/(png|jpe?g|gif|webp|avif|bmp)$/.test(ty))return `<img src="${url}" alt="${esc(a.n)}" loading="lazy" data-zoom>`;
+ if(/^video\//.test(ty))return `<video src="${url}" controls preload="metadata"></video>`;
+ if(/^audio\//.test(ty))return `<div style="display:grid;gap:4px"><span class="small muted">${esc(a.n)}</span><audio src="${url}" controls preload="none"></audio></div>`;
+ return `<a class="fchip" href="${url}?dl=1">${ic('folder')}<span>${esc(a.n)} <span class="muted small">${fsize(a.s)}</span></span></a>`}
+function msgHTML(m,grouped){
+ if(m.k==='sys')return `<div class="sys"><b>${esc(nm(m.u))}</b> ${esc(m.x)} · ${clock(m.t)}</div>`;
+ const isAI=m.k==='ai';const rx=m.r||{};
+ const rxh=Object.entries(REACT).map(([k,e])=>{const us=rx[k]||[];return us.length?`<button type="button" class="${us.includes(S.me.id)?'me':''}" data-rx="${k}" title="${esc(us.map(nm).join(', '))}">${e} ${us.length}</button>`:''}).join('');
+ const author=isAI?`<b>Copilot</b><span class="muted small">asked by ${esc(nm(m.u))}</span>`:`<b style="color:${okColor((mem(m.u)||{}).color)}">${esc(nm(m.u))}</b>`;
+ return `${isAI?`<span class="av" style="--c:#0b0e3a">${jar(22)}</span>`:av(m.u,false)}<div><div class="mh"${grouped?' hidden':''}>${author}<time>${clock(m.t)}</time>${m.p?`<span class="kchip">Pinned</span>`:''}</div><div class="mb">${m.d?'<i class="muted">Message deleted</i>':md(m.x,true)+(m.e?' <span class="muted small">(edited)</span>':'')}</div>${!m.d&&m.a&&m.a.length?`<div class="att">${m.a.map(attHTML).join('')}</div>`:''}<div class="rx">${rxh}</div><div class="rx tray">${Object.entries(REACT).map(([k,e])=>`<button type="button" data-rx="${k}" aria-label="React ${k}">${e}</button>`).join('')}</div></div>${m.d?'':`<div class="acts"><button type="button" data-act="tray" title="React" aria-label="React">${ic('smile')}</button><button type="button" data-act="pin" title="${m.p?'Unpin':'Pin'}" aria-label="Pin">${ic('pin')}</button>${m.u===S.me.id&&!isAI?`<button type="button" data-act="edit" title="Edit" aria-label="Edit">${ic('edit')}</button>`:''}${m.u===S.me.id||(S.meta&&S.meta.by===S.me.id)?`<button type="button" data-act="del" title="Delete" aria-label="Delete">${ic('trash')}</button>`:''}</div>`}`}
+function chatEnter(el){
+ S.msgEls=new Map();S.stick=true;
+ el.innerHTML=`<div class="chat"><div class="chans" id="chans"></div><div class="chatMain" id="chatDrop"><div class="chHead"><b id="chName"></b><button class="btn sm ghost" type="button" id="pinBtn" hidden>${ic('pin')}<span id="pinN"></span></button><button class="btn sm" type="button" data-go="files">${ic('folder')}<span class="lbl">Files</span></button></div><div class="msgs" id="msgs"><button class="btn sm" type="button" id="older" hidden>Load older messages</button><div id="msgList"></div></div><div class="typing" id="typing"></div><div class="pend" id="pend"></div><form class="composer" id="composer"><label class="iconBtn" title="Attach images, GIFs, video, audio or any file (max ${S.cfg.maxMb||25} MB)">${ic('clip')}<input type="file" id="fileIn" multiple hidden></label><textarea id="msgIn" rows="1" maxlength="6000" placeholder="Message… @name pings someone, @ai asks the copilot"></textarea><button class="btn pri" id="sendBtn" aria-label="Send">${ic('send')}</button></form></div></div>`;
+ const box=$('#msgs'),ta=$('#msgIn');
+ box.addEventListener('scroll',()=>{S.stick=box.scrollHeight-box.scrollTop-box.clientHeight<90});
+ box.addEventListener('load',()=>{if(S.stick)box.scrollTop=box.scrollHeight},true);
+ $('#older').onclick=async()=>{S.restoreFrom=box.scrollHeight-box.scrollTop;await loadChan(S.chan,true).catch(e=>toast('Could not load',e.message))};
+ $('#chans').onclick=e=>{const b=e.target.closest('[data-ch]');if(b)openChan(b.dataset.ch);if(e.target.closest('[data-newch]'))newChannel()};
+ $('#pinBtn').onclick=()=>{const ps=(S.msgs[S.chan]||[]).filter(m=>m.p&&!m.d);modal(`<h3>Pinned in #${esc(S.chan)}</h3>${ps.map(m=>`<div class="card"><div class="mh"><b>${esc(m.k==='ai'?'Copilot':nm(m.u))}</b><time>${esc(when(m.t))}</time></div><div class="mb">${md(m.x,true)}</div>${m.a&&m.a.length?`<div class="att">${m.a.map(attHTML).join('')}</div>`:''}</div>`).join('')||'<p class="muted">Nothing pinned in the loaded history.</p>'}`)};
+ const auto=()=>{ta.style.height='auto';ta.style.height=Math.min(180,ta.scrollHeight)+'px'};
+ ta.addEventListener('input',()=>{auto();if(!S.typingOn){S.typingOn=true;api('typing',{ws:S.ws,ch:S.chan,on:true}).catch(()=>{})}clearTimeout(S.tyT);S.tyT=setTimeout(stopTyping,2500)});
+ ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();sendChat()}});
+ ta.addEventListener('paste',e=>{const fs=[...((e.clipboardData&&e.clipboardData.files)||[])];if(fs.length){e.preventDefault();addPend(fs)}});
+ $('#fileIn').onchange=e=>{addPend([...e.target.files]);e.target.value=''};
+ $('#composer').onsubmit=e=>{e.preventDefault();sendChat()};
+ const dz=$('#chatDrop');let dc=0;
+ dz.addEventListener('dragenter',e=>{if([...(e.dataTransfer.types||[])].includes('Files')){dc++;dz.classList.add('drop')}});
+ dz.addEventListener('dragleave',()=>{dc=Math.max(0,dc-1);if(!dc)dz.classList.remove('drop')});
+ dz.addEventListener('dragover',e=>{if([...(e.dataTransfer.types||[])].includes('Files'))e.preventDefault()});
+ dz.addEventListener('drop',e=>{dc=0;dz.classList.remove('drop');const fs=[...(e.dataTransfer.files||[])];if(fs.length){e.preventDefault();addPend(fs)}});
+ $('#msgList').addEventListener('click',onMsgClick);
+ if(!S.msgs[S.chan])loadChan(S.chan).catch(()=>{});
+ renderPend();markRead(S.chan);setTimeout(()=>ta.focus(),50);
+}
+function stopTyping(){if(S.typingOn){S.typingOn=false;api('typing',{ws:S.ws,ch:S.chan,on:false}).catch(()=>{})}clearTimeout(S.tyT)}
+function addPend(fs){const max=(S.cfg.maxMb||25)*1048576;for(const f of fs){if(f.size>max){toast('Too big',`${f.name} is over the ${S.cfg.maxMb||25} MB limit.`);continue}S.pend.push({file:f,url:/^image\//.test(f.type)?URL.createObjectURL(f):''})}renderPend()}
+function renderPend(){const p=$('#pend');if(!p)return;p.innerHTML=S.pend.map((x,i)=>`<div class="pchip">${x.url?`<img src="${x.url}" alt="">`:ic('folder')}<span>${esc(x.file.name)}</span><button type="button" data-unpend="${i}" aria-label="Remove">×</button></div>`).join('');p.onclick=e=>{const b=e.target.closest('[data-unpend]');if(b){const x=S.pend.splice(+b.dataset.unpend,1)[0];if(x&&x.url)URL.revokeObjectURL(x.url);renderPend()}}}
+async function uploadFile(file,ch){const fd=new FormData();fd.append('file',file,file.name);const r=await fetch(`/api/upload?ws=${encodeURIComponent(S.ws)}&ch=${encodeURIComponent(ch||S.chan)}`,{method:'POST',body:fd,credentials:'same-origin'});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Upload failed');return j}
+async function sendChat(){
+ const ta=$('#msgIn');if(!ta||S.sending)return;const x=ta.value.trim();const files=S.pend.slice();if(!x&&!files.length)return;
+ S.sending=true;const sb=$('#sendBtn');sb.disabled=true;const ch=S.chan;
+ try{const ids=[];if(files.length){$('#pend').classList.add('busy');for(const p of files){try{ids.push((await uploadFile(p.file,ch)).id)}catch(e){toast('Upload failed',`${p.file.name}: ${e.message}`)}}}
+  if(!x&&!ids.length)throw new Error('Nothing could be sent.');
+  await api('msg:send',{ws:S.ws,ch,x,a:ids});ta.value='';ta.style.height='auto';S.pend.forEach(p=>p.url&&URL.revokeObjectURL(p.url));S.pend=[];renderPend();stopTyping();S.stick=true}
+ catch(e){toast('Send failed',e.message)}
+ finally{S.sending=false;sb.disabled=false;const pd=$('#pend');if(pd)pd.classList.remove('busy')}
+}
+function newChannel(){modal(`<h3>New channel</h3><form id="ncForm" class="stack"><label class="f">Name (lowercase, dashes)<input name="n" required maxlength="20" pattern="[a-z0-9\\-]{1,20}" placeholder="level-design"></label><p class="err" id="ncErr" hidden></p><div class="row end"><button class="btn pri">Create</button></div></form>`,b=>{b.querySelector('#ncForm').onsubmit=async e=>{e.preventDefault();try{const r=await api('chan:create',{ws:S.ws,name:String(new FormData(e.target).get('n'))});closeModal();openChan(r.id)}catch(x){const er=b.querySelector('#ncErr');er.textContent=x.message;er.hidden=false}}})}
+function onMsgClick(e){
+ const el=e.target.closest('.msg');if(!el)return;const m=(S.msgs[S.chan]||[]).find(x=>x.id===el.dataset.mid);if(!m)return;const base={ws:S.ws,ch:S.chan,id:m.id};
+ const rx=e.target.closest('[data-rx]');if(rx){w(api('msg:react',{...base,k:rx.dataset.rx}),'React');el.classList.remove('tr');return}
+ const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;
+ if(act==='tray')el.classList.toggle('tr');
+ else if(act==='pin')w(api('msg:pin',base),'Pin');
+ else if(act==='del')confirmBox('Delete message?','This removes it for everyone.','Delete',()=>w(api('msg:del',base),'Delete'));
+ else if(act==='edit')modal(`<h3>Edit message</h3><form id="edForm" class="stack"><textarea name="x" rows="5" maxlength="6000">${esc(m.x)}</textarea><div class="row end"><button type="button" class="btn" data-close>Cancel</button><button class="btn pri">Save</button></div></form>`,b=>{b.querySelector('#edForm').onsubmit=e2=>{e2.preventDefault();const x=String(new FormData(e2.target).get('x')).trim();closeModal();if(x&&x!==m.x)w(api('msg:edit',{...base,x}),'Edit')}});
+}
+function chatRefresh(){
+ const list=$('#msgList');if(!list)return;
+ const cs=Object.values(S.channels).sort((a,b)=>((a.ord??99)-(b.ord??99))||a.id.localeCompare(b.id));
+ $('#chans').innerHTML=`<div class="chT">Channels</div>`+cs.map(c=>{const u=unreadChan(c.id);return `<button class="chb ${c.id===S.chan?'on':''} ${u?'unread':''}" type="button" data-ch="${esc(c.id)}"># ${esc(c.name||c.id)}${u?'<i class="u"></i>':''}</button>`}).join('')+`<button class="chb" type="button" data-newch>${ic('plus')} New channel</button>`;
+ $('#chName').textContent='# '+((S.channels[S.chan]||{}).name||S.chan);
+ const msgs=S.msgs[S.chan]||[];const pins=msgs.filter(m=>m.p&&!m.d).length;$('#pinBtn').hidden=!pins;$('#pinN').textContent=pins+' pinned';
+ $('#older').hidden=!S.more[S.chan];
+ const box=$('#msgs');const keep=new Set();let prev=null;const order=[];
+ if(!msgs.length){if(!S.msgEls.has('_empty')){const n=document.createElement('div');n.className='sys';n.textContent=S.msgs[S.chan]?`This is the start of #${S.chan}. Drop files, paste screenshots, @mention teammates, or type @ai to ask the copilot.`:'Loading…';S.msgEls.set('_empty',n)}keep.add('_empty');order.push(S.msgEls.get('_empty'))}
+ for(const m of msgs){const g=!!(prev&&prev.u===m.u&&!m.k&&!prev.k&&m.t-prev.t<300000);const mm=mem(m.u)||{};const sig=JSON.stringify(m)+'|'+g+'|'+(mm.handle||'')+(mm.color||'');let el=S.msgEls.get(m.id);
+  if(!el||el.dataset.sig!==sig){const n=document.createElement('div');n.className=m.k==='sys'?'':'msg'+(g?' g':'')+(m.k==='ai'?' bot':'')+(m.p?' pin':'');n.dataset.mid=m.id;n.dataset.sig=sig;n.innerHTML=msgHTML(m,g);if(el)el.replaceWith(n);el=n;S.msgEls.set(m.id,el)}
+  keep.add(m.id);order.push(el);prev=m}
+ for(const [k,el] of S.msgEls)if(!keep.has(k)){el.remove();S.msgEls.delete(k)}
+ order.forEach((el,i)=>{if(list.children[i]!==el)list.insertBefore(el,list.children[i]||null)});
+ if(S.restoreFrom!=null){box.scrollTop=box.scrollHeight-S.restoreFrom;S.restoreFrom=null}else if(S.stick)box.scrollTop=box.scrollHeight;
+ const ty=Object.entries(S.typing[S.chan]||{}).filter(([u,t])=>u!==S.me.id&&Date.now()-t<(u==='ai'?90000:6000)).map(([u])=>u);
+ $('#typing').textContent=(ty.includes('ai')?'Copilot is thinking… ':'')+(ty.filter(u=>u!=='ai').length?ty.filter(u=>u!=='ai').map(nm).join(', ')+(ty.filter(u=>u!=='ai').length>1?' are':' is')+' typing…':'');
+}
+
+/* ---------- AI copilot ---------- */
+const CHIPS=[['Brainstorm ideas','Brainstorm 5 game ideas that fit our theme and team. For each: a one-line hook, the core mechanic, and why it is doable in the time we have left.',1],['Scope check','Look at our board and the time left. Are we on track? Tell me exactly what to cut, simplify or fake, and what the team should do in the next 3 hours.',1],['Break into tasks','Break this game idea into concrete tasks for our team and add them to the board, assigned by role where it makes sense:\n',0],['Standup','Write a quick standup for the team from the board: what is done, what is in progress, what is blocked, per person. End with the single most important next step.',1],['Name our game','Suggest 12 punchy names for our game, with a one-line reason each. Avoid names of existing well-known games.',1],['Store page','Write an itch.io page for our game: a hook line, a short description, controls, and credits by role. Ask me for anything you need.',0],['Debug help','Help me debug this. Engine/language: \nWhat happens: \nCode:\n',0],['Juice ideas','Give me 10 cheap "game feel" improvements (screen shake, particles, sound, tweening) we can add in under 30 minutes each, with implementation hints.',1]];
+async function loadAI(){const ws=S.ws;try{const r=await api('ai:get',{ws});if(S.ws!==ws||S.aiBusy)return;S.ai={msgs:r.msgs||[]};S.aiSig='';bump()}catch(e){}}
+function aiEnter(el){
+ S.aiSig='';
+ if(!S.cfg.ai){el.innerHTML=`<div class="aiIntro" style="padding:20px">${jar(72)}<h3>The AI copilot is switched off</h3><p class="muted">Whoever runs this server needs to add an Anthropic API key: put <code>ANTHROPIC_API_KEY=your-key</code> in the <code>.env</code> file next to <code>server.js</code>, then restart the server. Everything else works without it.</p></div>`;return}
+ el.innerHTML=`<div class="ai"><div class="aiMsgs" id="aiMsgs"></div><div class="aiBottom"><div class="aiChips">${CHIPS.map((c,i)=>`<button class="chip" type="button" data-chip="${i}">${esc(c[0])}</button>`).join('')}</div><div class="pend" id="aiPend" style="padding-top:8px"></div><form class="composer" id="aiForm"><label class="iconBtn" title="Attach screenshots">${ic('clip')}<input type="file" id="aiFile" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden></label><textarea id="aiIn" rows="2" placeholder="Ask about design, code, scope, art, audio, names, bugs…"></textarea><button class="btn pri" id="aiGo">${ic('send')}<span class="lbl">Send</span></button></form><div class="aiOpts"><label class="chk"><input type="checkbox" id="aiCtx" checked> Share board &amp; team</label><label class="chk"><input type="checkbox" id="aiChat"> Include recent chat</label><label class="chk"><input type="checkbox" id="aiDeep"> Deep think</label><span class="grow"></span><span class="muted">Only you see this conversation</span><button type="button" class="btn sm ghost" id="aiClear">New chat</button></div></div></div>`;
+ const ta=$('#aiIn');
+ ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('#aiForm').requestSubmit()}});
+ ta.addEventListener('paste',e=>{const fs=[...((e.clipboardData&&e.clipboardData.files)||[])].filter(f=>/^image\//.test(f.type));if(fs.length){e.preventDefault();addAiImgs(fs)}});
+ $('#aiForm').onsubmit=e=>{e.preventDefault();if(S.aiBusy){S.aiAbort&&S.aiAbort.abort();return}const v=ta.value.trim();if(!v)return;ta.value='';aiSend(v)};
+ $('#aiFile').onchange=e=>{addAiImgs([...e.target.files]);e.target.value=''};
+ el.querySelector('.aiChips').onclick=e=>{const b=e.target.closest('[data-chip]');if(!b)return;const c=CHIPS[+b.dataset.chip];if(c[2]&&!S.aiBusy)aiSend(c[1]);else{ta.value=c[1];ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}};
+ $('#aiClear').onclick=async()=>{if(S.aiBusy)return;await w(api('ai:clear',{ws:S.ws}),'Clear');S.ai={msgs:[]};S.aiSig='';aiRefresh()};
+ $('#aiMsgs').addEventListener('click',e=>{const c=e.target.closest('[data-aicopy]');if(c){copyText(S.ai.msgs[+c.dataset.aicopy].c);return}const p=e.target.closest('[data-aipost]');if(p){const m=S.ai.msgs[+p.dataset.aipost];w(api('msg:send',{ws:S.ws,ch:S.chan,x:m.c}),'Post').then(r=>{if(r)toast('Posted',`Shared to #${S.chan}`)})}});
+ renderAiPend();setTimeout(()=>ta.focus(),50);
+}
+function addAiImgs(fs){for(const f of fs){if(S.aiImgs.length>=4)break;S.aiImgs.push({file:f,url:URL.createObjectURL(f)})}renderAiPend()}
+function renderAiPend(){const p=$('#aiPend');if(!p)return;p.innerHTML=S.aiImgs.map((x,i)=>`<div class="pchip"><img src="${x.url}" alt=""><span>${esc(x.file.name)}</span><button type="button" data-unai="${i}" aria-label="Remove">×</button></div>`).join('');p.onclick=e=>{const b=e.target.closest('[data-unai]');if(b){const x=S.aiImgs.splice(+b.dataset.unai,1)[0];URL.revokeObjectURL(x.url);renderAiPend()}}}
+function shrink(file){return new Promise((res,rej)=>{const img=new Image();const u=URL.createObjectURL(file);img.onload=()=>{const k=Math.min(1,1568/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.85))};img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('Could not read '+file.name))};img.src=u})}
+function bubble(m,i,last){
+ if(m.r==='user')return `<div class="bub u">${esc(m.c)}${m.img?`\n<span class="small" style="opacity:.8">+ ${m.img} image${m.img>1?'s':''}</span>`:''}</div>`;
+ const busy=S.aiBusy&&last;
+ return `<div class="bub a">${(m.tools||[]).map(t=>`<p class="toolNote">✓ ${esc(t)}</p>`).join('')}<div class="md">${m.c?md(m.c):busy?'<span class="dots"><i></i><i></i><i></i></span>':''}</div>${m.err?`<p class="err">${esc(m.err)}</p>`:''}${m.c&&!busy?`<div class="row"><button class="btn sm ghost" type="button" data-aicopy="${i}">Copy</button><button class="btn sm ghost" type="button" data-aipost="${i}">Post to #${esc(S.chan)}</button></div>`:''}</div>`}
+function aiRefresh(){
+ const box=$('#aiMsgs');if(!box)return;const ms=S.ai.msgs||[];const lm=ms[ms.length-1]||{};const sig=ms.length+'|'+S.aiBusy+'|'+(lm.c||'').length+'|'+(lm.tools||[]).length+'|'+(lm.err||'')+'|'+S.chan;if(sig===S.aiSig)return;S.aiSig=sig;
+ const stick=box.scrollHeight-box.scrollTop-box.clientHeight<120;
+ box.innerHTML=ms.length?ms.map((m,i)=>bubble(m,i,i===ms.length-1)).join(''):`<div class="aiIntro">${jar(72)}<h3>Your jam copilot</h3><p class="muted">Ask for ideas, code, shaders, level design, sound tips or a scope reality check. It can read your board and chat, and add tasks when you ask. Pick a starter below or type your own. In team chat, type <b>@ai</b> to bring it into the conversation.</p></div>`;
+ if(stick)box.scrollTop=box.scrollHeight;
+ const go=$('#aiGo');if(go)go.innerHTML=S.aiBusy?'Stop':`${ic('send')}<span class="lbl">Send</span>`;
+}
+async function aiSend(text){
+ if(S.aiBusy)return;let imgs=[];
+ try{imgs=await Promise.all(S.aiImgs.map(x=>shrink(x.file)))}catch(e){return toast('Image problem',e.message)}
+ S.ai.msgs.push({r:'user',c:text,t:Date.now(),...(imgs.length?{img:imgs.length}:{})});const bot={r:'assistant',c:'',t:Date.now(),tools:[]};S.ai.msgs.push(bot);
+ S.aiImgs.forEach(x=>URL.revokeObjectURL(x.url));S.aiImgs=[];renderAiPend();
+ S.aiBusy=true;S.aiSig='';aiRefresh();
+ const ctx=!$('#aiCtx')||$('#aiCtx').checked,chat=$('#aiChat')&&$('#aiChat').checked,deep=$('#aiDeep')&&$('#aiDeep').checked;
+ S.aiAbort=new AbortController();let fr=0;
+ const paint=()=>{if(fr)return;fr=requestAnimationFrame(()=>{fr=0;const el=$('#aiMsgs .bub.a:last-child .md');const box=$('#aiMsgs');if(el&&box){const st=box.scrollHeight-box.scrollTop-box.clientHeight<120;el.innerHTML=bot.c?md(bot.c):'<span class="dots"><i></i><i></i><i></i></span>';if(st)box.scrollTop=box.scrollHeight}})};
+ try{
+  const r=await fetch('/api/ai',{method:'POST',headers:{'content-type':'application/json'},credentials:'same-origin',signal:S.aiAbort.signal,body:JSON.stringify({ws:S.ws,text,images:imgs,ctx,chat:chat?S.chan:null,deep})});
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||'AI request failed')}
+  const rd=r.body.getReader(),dec=new TextDecoder();let buf='';
+  for(;;){const {done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});let i;
+   while((i=buf.indexOf('\n'))>=0){const line=buf.slice(0,i);buf=buf.slice(i+1);if(!line.trim())continue;let ev;try{ev=JSON.parse(line)}catch(e){continue}
+    if(ev.t==='text'){bot.c=ev.text;paint()}else if(ev.t==='tool'){bot.tools.push(ev.note);S.aiSig='';aiRefresh()}else if(ev.t==='error')bot.err=ev.message;else if(ev.t==='done'&&ev.truncated)bot.err='The answer was cut off. Ask it to continue.'}}
+ }catch(e){bot.err=e.name==='AbortError'?'Stopped.':e.message}
+ S.aiBusy=false;S.aiSig='';aiRefresh();
+}
+
+/* ---------- files ---------- */
+function filesEnter(el){
+ el.innerHTML=`<div class="row"><input id="fSearch" placeholder="Search files" style="max-width:280px" value="${esc(S.fq)}"><div class="chips" id="fF"></div><span class="grow"></span><label class="btn pri">${ic('plus')} Upload<input type="file" id="fUp" multiple hidden></label></div><p class="small muted" style="margin:10px 0 0">Everything the team uploads, in chat or here. Any file type, up to ${S.cfg.maxMb||25} MB each.</p><div class="fgrid" id="fGrid"></div>`;
+ $('#fSearch').oninput=e=>{S.fq=e.target.value;filesRefresh()};
+ $('#fF').onclick=e=>{const b=e.target.closest('[data-ff]');if(b){S.ff=b.dataset.ff;filesRefresh()}};
+ $('#fUp').onchange=async e=>{const fs=[...e.target.files];e.target.value='';const max=(S.cfg.maxMb||25)*1048576;for(const f of fs){if(f.size>max){toast('Too big',f.name);continue}try{await uploadFile(f,'');toast('Uploaded',f.name)}catch(x){toast('Upload failed',`${f.name}: ${x.message}`)}}};
+ $('#fGrid').onclick=e=>{const s=e.target.closest('[data-fshare]');if(s){w(api('msg:send',{ws:S.ws,ch:S.chan,x:'',a:[s.dataset.fshare]}),'Share').then(r=>{if(r)toast('Shared',`Posted to #${S.chan}`)});return}
+  const d=e.target.closest('[data-fdel]');if(d){const f=S.files.find(x=>x.id===d.dataset.fdel);if(f)confirmBox('Delete file?',`${f.n} will stop loading everywhere it was shared.`,'Delete',()=>w(api('file:del',{ws:S.ws,id:f.id}),'Delete file'))}};
+}
+const fkind=t=>/^image\//.test(t)?'img':/^video\//.test(t)?'vid':/^audio\//.test(t)?'aud':/pdf|text|json|csv|markdown|document|sheet|presentation/.test(t)?'doc':'other';
+function filesRefresh(){
+ const g=$('#fGrid');if(!g)return;
+ $('#fF').innerHTML=[['all','All'],['img','Images & GIFs'],['vid','Video'],['aud','Audio'],['doc','Docs'],['other','Other']].map(([k,l])=>`<button class="chip ${S.ff===k?'on':''}" type="button" data-ff="${k}">${l}</button>`).join('');
+ const q=S.fq.toLowerCase();const l=S.files.filter(f=>(S.ff==='all'||fkind(String(f.ty||''))===S.ff)&&(!q||String(f.n).toLowerCase().includes(q)));
+ const lead=S.meta&&S.meta.by===S.me.id;
+ g.innerHTML=l.length?l.map(f=>{const url=fileURL(f.id);const k=fkind(String(f.ty||''));const ext=(String(f.n).split('.').pop()||'').slice(0,5).toUpperCase();const showImg=/^image\/(png|jpe?g|gif|webp|avif|bmp)$/.test(f.ty);
+  return `<div class="fcard"><div class="fthumb">${showImg?`<img src="${url}" alt="${esc(f.n)}" loading="lazy" data-zoom>`:k==='vid'?`<video src="${url}" preload="metadata" muted style="width:100%;height:100%;object-fit:cover"></video>`:k==='aud'?`<audio src="${url}" controls preload="none" style="width:92%"></audio>`:esc(ext||'FILE')}</div><div class="fmeta"><b title="${esc(f.n)}">${esc(f.n)}</b><span class="muted">${fsize(f.s)} · ${esc(nm(f.by))} · ${ago(f.at)}</span></div><div class="fact"><a class="btn sm ghost" href="${url}" target="_blank" rel="noopener">Open</a><a class="btn sm ghost" href="${url}?dl=1">Download</a><button class="btn sm ghost" type="button" data-fshare="${esc(f.id)}">Share</button>${f.by===S.me.id||lead?`<button class="btn sm ghost" type="button" data-fdel="${esc(f.id)}" aria-label="Delete">${ic('trash')}</button>`:''}</div></div>`}).join(''):`<p class="empty">${S.files.length?'No files match.':'No files yet. Drop sprites, GIFs, sounds, builds or mockups into chat and they collect here.'}</p>`;
+}
+
+/* ---------- notes ---------- */
+let noteT=0;
+function notesEnter(el){
+ el.innerHTML=`<div class="notes stack"><div class="row"><span class="muted small grow">Private scratchpad for this workspace. Only your account can read it. <span id="nState"></span></span><button class="btn sm" type="button" id="nAI">${ic('spark')} Turn into tasks</button></div><textarea id="nText" placeholder="Ideas, todo lists, links, snippets, things to remember…" disabled>Loading…</textarea></div>`;
+ const ta=$('#nText');const ws=S.ws;S.notesWs=ws;
+ api('notes:get',{ws}).then(r=>{if(S.ws!==ws||!$('#nText'))return;ta.value=r.x||'';S.notes=ta.value;ta.disabled=false;ta.focus()}).catch(e=>{ta.value='';toast('Could not load notes',e.message)});
+ ta.addEventListener('input',()=>{$('#nState').textContent='· editing…';clearTimeout(noteT);noteT=setTimeout(flushNotes,1000)});
+ $('#nAI').onclick=()=>{const x=ta.value.trim();if(!x)return toast('Notes are empty','Write something first.');if(!S.cfg.ai)return toast('AI is off','Add an Anthropic API key on the server to use this.');flushNotes();go('ai');setTimeout(()=>aiSend(`Here are my private notes. Pull out the actionable items and add them to the board as tasks assigned to me (${S.me.username}). Then list what you added.\n\n${x.slice(0,8000)}`),60)};
+}
+function flushNotes(){clearTimeout(noteT);const ta=$('#nText');if(!ta||ta.disabled||!S.notesWs)return;const x=ta.value;if(x===S.notes)return;S.notes=x;w(api('notes:set',{ws:S.notesWs,x}),'Save notes').then(r=>{const s=$('#nState');if(s)s.textContent=r?'· saved':'· not saved'})}
+
+/* ---------- global events ---------- */
+document.addEventListener('click',e=>{
+ const t=e.target;let b;
+ if(t.closest('[data-logout]')){e.preventDefault();closeModal();logout();return}
+ if(b=t.closest('[data-go]')){e.preventDefault();go(b.dataset.go);return}
+ if(t.closest('[data-handoff]')){handoffModal();return}
+ if(t.closest('[data-invite]')){inviteModal();return}
+ if(t.closest('[data-settings]')){settingsModal();return}
+ if(t.closest('[data-profile]')){profileModal();return}
+ if(t.closest('[data-lobby]')){closeModal();lobby();return}
+ if(t.closest('[data-newtask]')){taskModal(null);return}
+ if(t.closest('[data-mute]')){S.muted=!S.muted;try{localStorage.setItem('cr_mute',S.muted?'1':'0')}catch(x){}renderSide();toast(S.muted?'Sounds muted':'Sounds on','');return}
+ if(b=t.closest('[data-ping]')){handoffModal({to:b.dataset.ping});return}
+ if(b=t.closest('[data-ho]')){const tk=S.tasks[b.dataset.ho];handoffModal({task:b.dataset.ho,kind:tk&&tk.st==='review'?'review':'handoff'});return}
+ if(b=t.closest('[data-edit]')){e.preventDefault();taskModal(b.dataset.edit);return}
+ if(b=t.closest('[data-nst]')){setNotif(b.dataset.nid,b.dataset.nst);return}
+ if(b=t.closest('[data-nudge]')){w(api('notif:nudge',{ws:S.ws,id:b.dataset.nudge}),'Nudge').then(r=>{if(r)toast('Nudged','')});return}
+ if(b=t.closest('[data-openmention]')){const n=S.notifs.find(x=>x.id===b.dataset.openmention);if(n){setNotif(n.id,'done');openChan(n.ch||'general')}return}
+ if(b=t.closest('[data-focus]')){const mins=+b.dataset.focus;if(mins){S.focusEnd=Date.now()+mins*60000;try{localStorage.setItem('cr_focus',String(S.focusEnd))}catch(x){}setStatus('focus');toast('Focus mode on',`${mins} minutes. Ping sounds are muted and the team sees you're heads-down.`)}else{S.focusEnd=0;try{localStorage.removeItem('cr_focus')}catch(x){}setStatus('available')}tick();renderSide();return}
+ if(b=t.closest('[data-copycode]')){const c=b.parentElement.querySelector('code');if(c)copyText(c.textContent);return}
+ if(b=t.closest('img[data-zoom]')){$('#lbImg').src=b.src;$('#lightbox').hidden=false;return}
+});
+document.addEventListener('change',e=>{const s=e.target.closest('select[data-move]');if(s)moveTask(s.dataset.move,s.value)});
+$('#lightbox').onclick=()=>{$('#lightbox').hidden=true;$('#lbImg').removeAttribute('src')};
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'){if(!$('#lightbox').hidden)$('#lightbox').click();else if(!$('#modal').hidden)closeModal();return}
+ if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^[1-7]$/.test(e.key)&&S.ws&&$('#modal').hidden){e.preventDefault();go(NAV[+e.key-1][0])}
+});
+addEventListener('pagehide',flushNotes);
+
+boot();
+}
+</script>
+</body>
+</html>
